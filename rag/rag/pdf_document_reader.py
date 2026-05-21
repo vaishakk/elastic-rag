@@ -1,4 +1,4 @@
-from olrag.adapters.document_adapters import *
+from rag.adapters.document_adapters import *
 import os
 from pypdf import PdfReader
 

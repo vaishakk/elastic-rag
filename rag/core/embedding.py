@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import List
-from olrag.core.document import DocumentChunk
+from rag.core.document import DocumentChunk
 
 @dataclass
 class Embedding:

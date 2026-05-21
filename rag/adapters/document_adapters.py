@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from olrag.core.document import Document, DocumentStack
+from rag.core.document import Document, DocumentStack
 import os
 
 class PDFTextExtractor(ABC):

@@ -14,31 +14,14 @@ from pathlib import Path
 DEFAULT_ES_URL = "https://192.168.1.53:9200"
 
 # Edit these values directly before running the script.
-METHOD = "PUT"
-PATH = "/swedish_docs"
+METHOD = "POST"
+PATH = "/rag-documents/_search"
 BODY = {
-    "mappings": {
-      "properties": {
-        "title": {
-          "type": "text"
-        },
-        "content": {
-          "type": "text"
-        },
-        "content_vector": {
-          "type": "dense_vector",
-          "dims": 1536,
-          "similarity": "cosine"
-        },
-        "status": {
-          "type": "keyword"
-        },
-        "created_at": {
-          "type": "date"
-        }
-      }
-    }
+  "size": 100,
+  "query": {
+      "match_all": {}
   }
+}
 
 def load_env_file(path: Path) -> None:
     if not path.exists():

@@ -1,6 +1,6 @@
-from olrag.core.document import *
-from olrag.core.embedding import *
-from olrag.core.vectordb import *
+from rag.core.document import *
+from rag.core.embedding import *
+from rag.core.vectordb import *
 from abc import ABC, abstractmethod
 
 class InferenceModel(ABC):

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from olrag.core.document import DocumentChunk, DocumentStack, Document, Chunker
-from olrag.core.embedding import EmbeddingModel, Embedding
+from rag.core.document import DocumentChunk, DocumentStack, Document, Chunker
+from rag.core.embedding import EmbeddingModel, Embedding
 
 class VectorDB(ABC):
     """
