@@ -39,7 +39,7 @@ class OpenAIEmbeddingModel(EmbeddingModel):
 
         return Embedding(chunk_id=chunk.id, embedding=vector)
 
-    def embed_batch(self, chunks: List[DocumentChunk]) -> List[Embedding]:
+    def embed_batch_(self, chunks: List[DocumentChunk]) -> List[Embedding]:
         texts = [chunk.text for chunk in chunks]
         if any(not text.strip() for text in texts):
             raise EmbeddingError("Cannot embed empty chunk in batch")

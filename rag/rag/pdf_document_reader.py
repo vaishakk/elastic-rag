@@ -7,7 +7,7 @@ from rag.adapters.document_adapters import *
 import os
 from pypdf import PdfReader
 
-class PyPDFExtractor(PDFTextExtractor):
+class PyPDFExtractor(TextExtractor):
 
     def __init__(self):
         super().__init__()

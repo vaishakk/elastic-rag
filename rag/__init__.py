@@ -19,8 +19,13 @@ from rag.rag.embedding import OpenAIEmbeddingModel
 from rag.rag.pdf_document_reader import (
     DocumentFromPDF,
     DocumentStackFromPDFFolder,
-    PDFTextExtractor,
+    TextExtractor,
     PyPDFExtractor,
+)
+from rag.adapters.document_adapters import (
+    JSONLExtractor,
+    DocumentFromJSONL,
+    DocumentStackFromJSONLFile,
 )
 from rag.rag.vectordb import ElasticsearchVectorDB
 
@@ -33,9 +38,13 @@ __all__ = [
     "DocumentChunk",
     "DocumentError",
     "DocumentFromPDF",
+    "DocumentFromJSON",
+    "DocumentFromJSONL",
     "DocumentRepository",
     "DocumentStack",
     "DocumentStackFromPDFFolder",
+    "DocumentStackFromJSONFolder",
+    "DocumentStackFromJSONLFile",
     "ElasticsearchVectorDB",
     "Embedding",
     "EmbeddingError",
@@ -45,6 +54,10 @@ __all__ = [
     "LlamaIndexChunker",
     "OlragError",
     "OpenAIEmbeddingModel",
+    "DefaultJSONExtractor",
+    "DefaultJSONLExtractor",
+    "JSONTextExtractor",
+    "JSONLTextExtractor",
     "PDFTextExtractor",
     "PyPDFExtractor",
     "RAG",
