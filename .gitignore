@@ -31,4 +31,4 @@ htmlcov/
 *.crt
 
 # Document Folder
-./docs
+docs/

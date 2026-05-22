@@ -40,3 +40,11 @@ class EmbeddingModel(ABC):
             Embedding: The resulting embedding object for the chunk.
         """
         raise NotImplementedError
+
+    def embed_batch(self, chunks: List[DocumentChunk]) -> List[Embedding]:
+        """
+        Generate embeddings for a list of document chunks.
+
+        Subclasses may override this for a provider-specific batch API.
+        """
+        return [self.embed(chunk) for chunk in chunks]

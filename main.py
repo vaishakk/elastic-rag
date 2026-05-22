@@ -7,11 +7,10 @@ from rag import OpenAIEmbeddingModel, LlamaIndexChunker, ElasticsearchVectorDB, 
 from search_docs import search
 
 # stack = DocumentStackFromPDFFolder('./docs', PyPDFExtractor())
-stack = DocumentStackFromJSONLFile('/Users/vk/Downloads/nfcorpus/corpus.jsonl')
+stack = DocumentStackFromJSONLFile('test-docs.jsonl')
 embed_model = OpenAIEmbeddingModel()
 chunker = LlamaIndexChunker()
 db = ElasticsearchVectorDB(model=embed_model, chunker=chunker)
-
 search_engine = RAG(doc_stack=stack, embed_model=embed_model, db=db)
 
 print(search_engine.retrieve('increased phosphate levels'))

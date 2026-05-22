@@ -122,7 +122,7 @@ class JSONLExtractor(TextExtractor):
     def extract_text(self, record: dict, source: Path, id_field=None) -> (str, str):
         if not isinstance(record, dict):
             raise DocumentError("Each JSONL line must be a JSON object.")
-        meta = None
+        metadata = None
         if id_field:
             metadata = {
                 id_field: record[id_field]
@@ -151,8 +151,8 @@ class DocumentFromJSONL(Document):
         extractor: JSONLExtractor,
         record: dict,
     ):
-        text, title,metadata = extractor.extract_text(record, file_url)
-        super().__init__(id=metadata.get('id', id), path=file_url, title=title, text=text, summary=summary)
+        text, title, metadata = extractor.extract_text(record, file_url, id_field="_id")
+        super().__init__(id=metadata.get('_id', id), path=file_url, title=title, text=text, summary=summary)
         self.extractor = extractor
 
 

@@ -108,20 +108,10 @@ class ElasticsearchVectorDB(VectorDB):
             raise VectorDBError("Failed to chunk documents for Elasticsearch indexing") from exc
 
     def _embed_chunks(self, chunks: Sequence[DocumentChunk]):
-        batch_embed = getattr(self.model, "embed_batch", None)
-        if callable(batch_embed):
-            try:
-                return batch_embed(list(chunks))
-            except Exception as exc:  # pragma: no cover - defensive wrapper
-                raise VectorDBError("Failed to embed chunks for Elasticsearch indexing") from exc
-
-        embeddings = []
-        for chunk in chunks:
-            try:
-                embeddings.append(self.model.embed(chunk))
-            except Exception as exc:  # pragma: no cover - defensive wrapper
-                raise VectorDBError(f"Failed to embed chunk {chunk.id}") from exc
-        return embeddings
+        try:
+            return self.model.embed_batch(list(chunks))
+        except Exception as exc:  # pragma: no cover - defensive wrapper
+            raise VectorDBError("Failed to embed chunks for Elasticsearch indexing") from exc
 
     def _infer_dims(self, vectors: Sequence[Sequence[float]]) -> int:
         if self.dims is not None:
