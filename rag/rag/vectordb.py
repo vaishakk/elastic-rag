@@ -196,6 +196,14 @@ class ElasticsearchVectorDB(VectorDB):
     def add_chunk(self, chunk: DocumentChunk):
         self._index_chunks([chunk])
 
+    def retrieve(self, query: str, **kwargs) -> list[DocumentChunk]:
+        top_k, num_candidates = self.top_k, self.num_candidates
+        if 'top_k' in kwargs:
+            top_k = kwargs.pop('top_k')
+        if 'num_candidates' in kwargs:
+            num_candidates = kwargs.pop('num_candidates')
+        return self.search(query, top_k=top_k, num_candidates=num_candidates)
+
     def search(self, query: str, *, top_k: int | None = None, num_candidates: int | None = None) -> List[DocumentChunk]:
         query_chunk = DocumentChunk(id="__query__", doc_id="__query__", text=query)
 

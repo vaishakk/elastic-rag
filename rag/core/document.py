@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import List
 
 @dataclass
@@ -9,13 +10,13 @@ class Document:
 
     Attributes:
         id (str): Unique identifier for the document.
-        path (str): File path or source of the document.
+        path (Path): File path or source of the document.
         title (str): Title or name of the document.
         text (str): Full text content of the document.
         summary (str, optional): Generated summary of the document.
     """
     id: str
-    path: str
+    path: Path
     title: str
     text: str = field(repr=False)
     summary: str = None

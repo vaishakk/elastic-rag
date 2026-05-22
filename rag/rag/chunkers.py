@@ -31,7 +31,7 @@ class LlamaIndexChunker(Chunker):
                 continue
             metadata = {
                 "doc_id": doc.id,
-                "path": doc.path,
+                "path": str(doc.path),
                 "title": doc.title,
             }
             llama_docs.append(LlamaDocument(text=doc.text, metadata=metadata))

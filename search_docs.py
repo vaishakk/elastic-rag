@@ -3,8 +3,6 @@
 import os
 import sys
 from elasticsearch import Elasticsearch
-
-from main import embed_model
 from rag import DocumentChunk, OpenAIEmbeddingModel
 
 INDEX_NAME = os.environ["ES_INDEX_NAME"]

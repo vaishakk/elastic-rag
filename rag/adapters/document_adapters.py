@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import List
+
+from rag import DocumentError
 from rag.core.document import Document, DocumentStack
 import os
 
@@ -11,12 +14,12 @@ class PDFTextExtractor(ABC):
     """
 
     @abstractmethod
-    def extract_text(self, url: str) -> (str, str):
+    def extract_text(self, url: Path) -> (str, str):
         """
         Extract the full text and title from a PDF file.
 
         Args:
-            url (str): Path or URL to the PDF file.
+        url (Path): Path or URL to the PDF file.
 
         Returns:
             tuple(str, str): A tuple containing:
@@ -37,7 +40,7 @@ class DocumentFromPDF(Document):
     def __init__(
         self,
         id: str,
-        file_url: str,
+        file_url: Path,
         summary: str,
         extractor: PDFTextExtractor
     ):
@@ -48,7 +51,7 @@ class DocumentFromPDF(Document):
 
         Args:
             id (str): Unique identifier for this document.
-            file_url (str): Path or URL to the PDF file.
+            file_url (Path): Path or URL to the PDF file.
             summary (str): Optional summary of the document.
             extractor (PDFTextExtractor): Instance to extract text and title.
         """
@@ -57,11 +60,9 @@ class DocumentFromPDF(Document):
         self.extractor = extractor
 
 
-class DocumentStackFromPDFFolder(DocumentStack, ABC):
+class DocumentStackFromPDFFolder(DocumentStack):
     """
     Builds a DocumentStack from all PDF files in a given folder.
-
-    Subclasses must implement list_pdf_dir to list PDF filenames in the folder.
     """
 
     def __init__(self, folder_url: str, extractor: PDFTextExtractor):
@@ -73,13 +74,18 @@ class DocumentStackFromPDFFolder(DocumentStack, ABC):
             extractor (PDFTextExtractor): Instance used to extract PDF content.
         """
         self.extractor = extractor
-        files = self.list_pdf_dir(folder_url)
+        if not os.path.isdir(folder_url):
+            raise DocumentError('Folder url {} does not exist'.format(folder_url))
+        try:
+            files = self.list_pdf_dir(folder_url)
+        except DocumentError as e:
+            raise DocumentError(e)
         docs: List[Document] = []
-        for file in files:
+        for idx, file in enumerate(files):
             docs.append(
                 DocumentFromPDF(
-                    id=str(len(docs)),
-                    file_url=f"{folder_url}/{file}",
+                    id=str(idx),
+                    file_url=Path(folder_url) / file,
                     summary='',
                     extractor=self.extractor
                 )
@@ -96,4 +102,7 @@ class DocumentStackFromPDFFolder(DocumentStack, ABC):
         Returns:
             List[str]: Filenames of all PDF files found.
         """
-        return [file for file in os.listdir(folder_url) if '.pdf' in file]
+        pdf_files = [file for file in os.listdir(folder_url) if file.endswith('.pdf')]
+        if not pdf_files:
+            raise DocumentError('No PDF files found in {}'.format(folder_url))
+        return pdf_files

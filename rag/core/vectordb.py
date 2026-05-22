@@ -68,4 +68,8 @@ class VectorDB(ABC):
         Returns:
             NotImplemented: If the method is not implemented by a subclass.
         """
-        return NotImplemented
+        raise NotImplemented
+
+    @abstractmethod
+    def retrieve(self, query: str, **kwargs) -> list[DocumentChunk]:
+        raise NotImplemented

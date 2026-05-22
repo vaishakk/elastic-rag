@@ -14,14 +14,9 @@ from pathlib import Path
 DEFAULT_ES_URL = "https://192.168.1.53:9200"
 
 # Edit these values directly before running the script.
-METHOD = "POST"
-PATH = "/rag-documents/_search"
-BODY = {
-  "size": 100,
-  "query": {
-      "match_all": {}
-  }
-}
+METHOD = "DELETE"
+BODY = None
+PATH = "/rag-documents"
 
 def load_env_file(path: Path) -> None:
     if not path.exists():

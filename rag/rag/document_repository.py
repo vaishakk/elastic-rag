@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import ClassVar
 
 from rag.core.document import Document, DocumentRepository, DocumentStack
@@ -8,7 +9,7 @@ from rag.rag.pdf_document_reader import PyPDFExtractor
 class DictDocumentRepository(DocumentRepository):
     """Simple in-memory repository backed by a class-level dictionary."""
 
-    _docs: ClassVar[dict[str, str]] = {}
+    _docs: ClassVar[dict[str, Path]] = {}
 
     def __init__(self, stack: DocumentStack):
         super().__init__(stack)
@@ -24,7 +25,7 @@ class DictDocumentRepository(DocumentRepository):
 
         url = self._docs[id]
 
-        if not url.lower().endswith('.pdf'):
+        if url.suffix.lower() != '.pdf':
             raise DocumentError('Only PDF documents are supported')
 
         text, title = self.extractor.extract_text(url)

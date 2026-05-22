@@ -29,3 +29,6 @@ htmlcov/
 
 # Certificates
 *.crt
+
+# Document Folder
+./docs

@@ -1,17 +1,23 @@
+from rag import InferenceError
 from rag.core.document import *
 from rag.core.embedding import *
 from rag.core.vectordb import *
 from rag.core.inference import *
-from abc import ABC, abstractmethod
 
-class RAG(ABC):
+class RAG:
 
-    def __init__(self, doc_stack: DocumentStack, embed_model: EmbeddingModel, db: VectorDB, infer_model: InferenceModel):
+    def __init__(self, doc_stack: DocumentStack, embed_model: EmbeddingModel, db: VectorDB, infer_model: InferenceModel=None):
         self.doc_stack = doc_stack
         self.embed_model = embed_model
         if getattr(db, "model", None) is not None and db.model is not embed_model:
             raise ValueError("VectorDB must be initialised with the same EmbeddingModel instance passed to RAG")
         self.db = db
+        if infer_model:
+            self.infer_model = infer_model
+        self.create_db()
+        self.add_stack(self.doc_stack)
+
+    def set_infer_model(self, infer_model: InferenceModel):
         self.infer_model = infer_model
 
     def create_db(self):
@@ -58,11 +64,13 @@ class RAG(ABC):
             return NotImplemented
         return self.db.add_chunk(chunk)
 
-    @abstractmethod
-    def retrieve(self, query: str) -> list[DocumentChunk]:
-        raise NotImplementedError
+    def retrieve(self, query: str, **kwargs) -> list[DocumentChunk]:
+        return self.db.retrieve(query=query, **kwargs)
+
     
     def infer(self, query: str, context: list[DocumentChunk]) -> str:
+        if self.infer_model is None:
+            raise InferenceError('Inference model must be initialised. Use RAG.set_infer_model.')
         return self.infer_model.infer(query=query, context=context)
 
     
