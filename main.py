@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import pytest
 from rag.adapters.document_adapters import *
@@ -6,8 +7,7 @@ from rag.core.document import *
 from rag import OpenAIEmbeddingModel, LlamaIndexChunker, ElasticsearchVectorDB, RAG
 from search_docs import search
 
-# stack = DocumentStackFromPDFFolder('./docs', PyPDFExtractor())
-stack = DocumentStackFromJSONLFile('test-docs.jsonl')
+stack = DocumentStackFromJSONLFile(os.getenv('DOCS_JSONL_FILE', 'test-docs.jsonl'))
 embed_model = OpenAIEmbeddingModel()
 chunker = LlamaIndexChunker()
 db = ElasticsearchVectorDB(model=embed_model, chunker=chunker)

@@ -6,6 +6,7 @@ from typing import List, Sequence
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
+from sqlalchemy.testing.suite.test_reflection import metadata
 
 from rag.core.document import Chunker, DocumentChunk, DocumentStack
 from rag.core.embedding import EmbeddingModel
@@ -222,10 +223,13 @@ class ElasticsearchVectorDB(VectorDB):
         hits = response.get("hits", {}).get("hits", [])
         chunks: List[DocumentChunk] = []
         for hit in hits:
-            source = hit.get("_source") or {}
+            source = hit.get("_source")
             chunk_id = source.get("chunk_id") or hit.get("_id")
             doc_id = source.get("doc_id") or ""
             text = source.get(self.content_field) or ""
-            chunks.append(DocumentChunk(id=chunk_id, doc_id=doc_id, text=text))
+            metadata = {
+                'score': hit.get("_score") or 0,
+            }
+            chunks.append(DocumentChunk(id=chunk_id, doc_id=doc_id, text=text, metadata=metadata))
 
         return chunks

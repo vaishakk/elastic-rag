@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List
+from typing import List, Optional
+
 
 @dataclass
 class Document:
@@ -64,10 +65,12 @@ class DocumentChunk:
         id (str): Unique identifier for the chunk.
         doc_id (str): Identifier of the parent document.
         text (str): Text content of the chunk.
+        metadata (dict): Dictionary of metadata for the chunk.
     """
     id: str
     doc_id: str
     text: str
+    metadata: Optional[dict] = None
 
 class Chunker(ABC):
     """
