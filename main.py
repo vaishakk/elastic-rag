@@ -1,18 +1,7 @@
-import os
-from pathlib import Path
-import pytest
-from rag.adapters.document_adapters import *
-from rag.rag.pdf_document_reader import *
-from rag.core.document import *
-from rag import OpenAIEmbeddingModel, LlamaIndexChunker, ElasticsearchVectorDB, RAG
-from search_docs import search
+from __future__ import annotations
 
-stack = DocumentStackFromJSONLFile(os.getenv('DOCS_JSONL_FILE', 'test-docs.jsonl'))
-embed_model = OpenAIEmbeddingModel()
-chunker = LlamaIndexChunker()
-db = ElasticsearchVectorDB(model=embed_model, chunker=chunker)
-search_engine = RAG(doc_stack=stack, embed_model=embed_model, db=db)
-
-print(search_engine.retrieve('increased phosphate levels'))
+from cli import main
 
 
+if __name__ == "__main__":
+    raise SystemExit(main())

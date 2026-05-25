@@ -177,3 +177,59 @@ def test_vector_db_uses_model_embed_batch():
 
     assert model.calls == 1
     assert len(result) == 2
+
+
+def test_vector_db_skips_chunks_that_already_exist(monkeypatch):
+    indexed_actions: list[dict] = []
+
+    class _Model:
+        def __init__(self):
+            self.calls = 0
+
+        def embed_batch(self, chunks):
+            self.calls += 1
+            return [type("E", (), {"embedding": [float(len(chunk.text))]})() for chunk in chunks]
+
+    class _Client:
+        def __init__(self):
+            self.mget_calls: list[tuple[str, list[str]]] = []
+
+        class indices:
+            @staticmethod
+            def exists(index):
+                return True
+
+        def mget(self, index, ids):
+            self.mget_calls.append((index, ids))
+            return {
+                "docs": [
+                    {"_id": "existing", "found": True},
+                    {"_id": "missing", "found": False},
+                ]
+            }
+
+    class _DB(ElasticsearchVectorDB):
+        def _build_client(self):
+            return _Client()
+
+    def _fake_bulk(client, actions, refresh):
+        indexed_actions.extend(list(actions))
+        return len(indexed_actions), []
+
+    monkeypatch.setattr("rag.rag.vectordb.bulk", _fake_bulk)
+
+    model = _Model()
+    client = _Client()
+    db = _DB(model=model, chunker=_NoopChunker(), client=client)
+
+    db._index_chunks(
+        [
+            DocumentChunk(id="existing", doc_id="d", text="already indexed"),
+            DocumentChunk(id="new", doc_id="d", text="should be indexed"),
+            DocumentChunk(id="existing", doc_id="d", text="duplicate existing"),
+        ]
+    )
+
+    assert model.calls == 1
+    assert client.mget_calls == [("rag-documents", ["existing", "new"])]
+    assert [action["_id"] for action in indexed_actions] == ["new"]

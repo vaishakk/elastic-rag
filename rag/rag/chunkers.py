@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import hashlib
 from typing import List
-from uuid import uuid4
 
 from llama_index.core import Document as LlamaDocument
 from llama_index.core.node_parser import SimpleNodeParser
@@ -23,6 +23,10 @@ class LlamaIndexChunker(Chunker):
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
         )
+
+    @staticmethod
+    def _chunk_id(text: str) -> str:
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
     def split_doc(self, documents: DocumentStack) -> List[DocumentChunk]:
         llama_docs: List[LlamaDocument] = []
@@ -46,7 +50,6 @@ class LlamaIndexChunker(Chunker):
 
         chunks: List[DocumentChunk] = []
         for node in nodes:
-            node_id = getattr(node, "node_id", None) or getattr(node, "id_", None) or str(uuid4())
             metadata = getattr(node, "metadata", {}) or {}
             doc_id = metadata.get("doc_id") or getattr(node, "ref_doc_id", None)
 
@@ -60,7 +63,7 @@ class LlamaIndexChunker(Chunker):
 
             chunks.append(
                 DocumentChunk(
-                    id=node_id,
+                    id=self._chunk_id(text),
                     doc_id=doc_id,
                     text=text,
                 )

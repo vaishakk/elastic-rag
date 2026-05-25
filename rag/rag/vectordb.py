@@ -114,6 +114,38 @@ class ElasticsearchVectorDB(VectorDB):
         except Exception as exc:  # pragma: no cover - defensive wrapper
             raise VectorDBError("Failed to embed chunks for Elasticsearch indexing") from exc
 
+    @staticmethod
+    def _dedupe_chunks(chunks: Sequence[DocumentChunk]) -> List[DocumentChunk]:
+        deduped: List[DocumentChunk] = []
+        seen_ids: set[str] = set()
+        for chunk in chunks:
+            if chunk.id in seen_ids:
+                continue
+            seen_ids.add(chunk.id)
+            deduped.append(chunk)
+        return deduped
+
+    def _existing_chunk_ids(self, chunk_ids: Sequence[str]) -> set[str]:
+        unique_ids = list(dict.fromkeys(chunk_ids))
+        if not unique_ids:
+            return set()
+        if not self.client.indices.exists(index=self.index_name):
+            return set()
+
+        try:
+            response = self.client.mget(index=self.index_name, ids=unique_ids)
+        except Exception as exc:  # pragma: no cover - defensive wrapper
+            raise VectorDBError("Failed to check existing chunk ids in Elasticsearch") from exc
+
+        docs = response.get("docs", []) if isinstance(response, dict) else []
+        existing_ids: set[str] = set()
+        for doc in docs:
+            if doc.get("found"):
+                doc_id = doc.get("_id")
+                if doc_id:
+                    existing_ids.add(doc_id)
+        return existing_ids
+
     def _infer_dims(self, vectors: Sequence[Sequence[float]]) -> int:
         if self.dims is not None:
             return self.dims
@@ -158,6 +190,15 @@ class ElasticsearchVectorDB(VectorDB):
             }
 
     def _index_chunks(self, chunks: Sequence[DocumentChunk]) -> None:
+        if not chunks:
+            return
+
+        chunks = self._dedupe_chunks(chunks)
+        if not chunks:
+            return
+
+        existing_ids = self._existing_chunk_ids([chunk.id for chunk in chunks])
+        chunks = [chunk for chunk in chunks if chunk.id not in existing_ids]
         if not chunks:
             return
 
