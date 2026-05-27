@@ -138,19 +138,23 @@ CLI search interface + evaluation
 
 ## How To Run
 
-1. Make sure Elasticsearch is running and the target index is available.
+1. Make sure Elasticsearch is running.
 
 2. Ensure `.env` exists in the repository root and contains the variables above.
 
 3. Start the interactive CLI.
 
    ```bash
-   uv run main.py
+   uv run cli.py
    ```
 
-4. Enter a search query when prompted.
+4. Use the menu to either search the current index or reindex all PDF files under `./docs`.
 
-5. Press Enter on a blank line or type `quit` to exit.
+5. If you choose search, enter a query when prompted.
+
+6. If you choose reindex, the CLI will rebuild the index from the recursive contents of `./docs`.
+
+7. Press Enter on a blank line or type `quit` to exit.
 
 ## Retrieval Evaluation
 

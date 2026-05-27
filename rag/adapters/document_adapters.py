@@ -65,7 +65,7 @@ class DocumentFromPDF(Document):
 
 class DocumentStackFromPDFFolder(DocumentStack):
     """
-    Builds a DocumentStack from all PDF files in a given folder.
+    Builds a DocumentStack from all PDF files in a given folder and its subfolders.
     """
 
     def __init__(self, folder_url: str, extractor: TextExtractor):
@@ -88,24 +88,28 @@ class DocumentStackFromPDFFolder(DocumentStack):
             docs.append(
                 DocumentFromPDF(
                     id=str(idx),
-                    file_url=Path(folder_url) / file,
+                    file_url=file,
                     summary='',
                     extractor=self.extractor
                 )
             )
         super().__init__(docs)
 
-    def list_pdf_dir(self, folder_url: str) -> List[str]:
+    def list_pdf_dir(self, folder_url: str) -> List[Path]:
         """
-        List PDF files within the specified folder.
+        List PDF files within the specified folder and all nested subfolders.
 
         Args:
             folder_url (str): Path or URL to the folder.
 
         Returns:
-            List[str]: Filenames of all PDF files found.
+            List[Path]: Paths to all PDF files found.
         """
-        pdf_files = [file for file in os.listdir(folder_url) if file.endswith('.pdf')]
+        root = Path(folder_url)
+        pdf_files = sorted(
+            file for file in root.rglob("*")
+            if file.is_file() and file.suffix.lower() == ".pdf"
+        )
         if not pdf_files:
             raise DocumentError('No PDF files found in {}'.format(folder_url))
         return pdf_files
@@ -197,4 +201,3 @@ class DocumentStackFromJSONLFile(DocumentStack):
             raise DocumentError("JSONL file is empty.")
 
         super().__init__(docs)
-

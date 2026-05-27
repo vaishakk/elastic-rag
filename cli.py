@@ -3,12 +3,16 @@ from __future__ import annotations
 import os
 import sys
 import textwrap
+from pathlib import Path
 from typing import Callable, Iterable, TextIO
 
-from rag import DocumentChunk, ElasticsearchVectorDB, LlamaIndexChunker, OpenAIEmbeddingModel
+from rag import DocumentChunk, DocumentStackFromPDFFolder, ElasticsearchVectorDB, LlamaIndexChunker, OpenAIEmbeddingModel
+from rag.rag.pdf_document_reader import PyPDFExtractor
 
 
 DEFAULT_INDEX_NAME = "test-documents"
+DEFAULT_DOCS_DIR = Path("./docs")
+DEFAULT_MENU_PROMPT = "Select [1] search, [2] reindex ./docs, [q] quit: "
 DEFAULT_PROMPT = "Search query (blank or 'quit' to exit): "
 
 
@@ -48,12 +52,30 @@ def print_results(query: str, results: Iterable[DocumentChunk], *, output: TextI
             print(file=output)
 
 
+def reindex_docs_folder(
+    db: ElasticsearchVectorDB,
+    docs_dir: Path = DEFAULT_DOCS_DIR,
+    *,
+    output: TextIO = sys.stdout,
+    stack_factory: Callable[[str, PyPDFExtractor], DocumentStackFromPDFFolder] = DocumentStackFromPDFFolder,
+    extractor_factory: Callable[[], PyPDFExtractor] = PyPDFExtractor,
+) -> None:
+    stack = stack_factory(str(docs_dir), extractor_factory())
+
+    if db.client.indices.exists(index=db.index_name):
+        db.client.indices.delete(index=db.index_name)
+
+    db.create_db(stack)
+    print(f"Reindexed {len(stack.documents)} document(s) from {docs_dir}", file=output)
+
+
 def prompt_search_loop(
     db: ElasticsearchVectorDB,
     *,
     input_fn: Callable[[str], str] = input,
     output: TextIO = sys.stdout,
     prompt: str = DEFAULT_PROMPT,
+    exit_message: str | None = "Exiting.",
 ) -> int:
     print("Interactive Elasticsearch RAG search", file=output)
     print("Press Enter on an empty line or type 'quit' to exit.", file=output)
@@ -66,7 +88,8 @@ def prompt_search_loop(
             return 0
 
         if not query or query.lower() in {"quit", "exit"}:
-            print("Exiting.", file=output)
+            if exit_message:
+                print(exit_message, file=output)
             return 0
 
         try:
@@ -78,10 +101,44 @@ def prompt_search_loop(
         print_results(query, results, output=output)
 
 
+def prompt_main_menu(
+    db: ElasticsearchVectorDB,
+    *,
+    input_fn: Callable[[str], str] = input,
+    output: TextIO = sys.stdout,
+) -> int:
+    while True:
+        print("\nInteractive Elasticsearch RAG", file=output)
+        print("1. Search current index", file=output)
+        print("2. Reindex all docs in ./docs", file=output)
+        print("q. Quit", file=output)
+
+        try:
+            choice = input_fn(DEFAULT_MENU_PROMPT).strip().lower()
+        except EOFError:
+            print(file=output)
+            return 0
+
+        if choice in {"q", "quit", "exit"}:
+            print("Exiting.", file=output)
+            return 0
+        if choice in {"1", "s", "search"}:
+            prompt_search_loop(db, input_fn=input_fn, output=output, exit_message=None)
+            continue
+        if choice in {"2", "r", "reindex"}:
+            try:
+                reindex_docs_folder(db, output=output)
+            except Exception as exc:  # pragma: no cover - runtime environment/config errors
+                print(f"Reindex failed: {exc}", file=output)
+            continue
+
+        print("Unknown choice. Enter 1, 2, or q.", file=output)
+
+
 def main(argv: list[str] | None = None) -> int:
     _ = argv  # The CLI is intentionally interactive, so argv is unused.
     db = build_search_db()
-    return prompt_search_loop(db)
+    return prompt_main_menu(db)
 
 if __name__ == "__main__":
     raise SystemExit(main())
