@@ -1,24 +1,41 @@
 import os
+from functools import lru_cache
 
 from fastapi import FastAPI
 
-from api.adapters.rag_adapter import RAGAdapter
-from rag import ElasticsearchVectorDB, OpenAIEmbeddingModel, LlamaIndexChunker, RAG
+from rag import ElasticsearchVectorDB, OpenAIEmbeddingModel, LlamaIndexChunker, RAG, DocumentStackFromPDFFolder, \
+    PyPDFExtractor
 
 app = FastAPI()
-def build_search_db(index_name: str | None = None) -> ElasticsearchVectorDB:
+
+
+def build_rag_system(index_name: str | None = None) -> RAG:
+    stack = DocumentStackFromPDFFolder('./docs', PyPDFExtractor())
     embed_model = OpenAIEmbeddingModel()
     chunker = LlamaIndexChunker()
     resolved_index_name = index_name or os.environ.get("ES_INDEX_NAME")
-    return ElasticsearchVectorDB(model=embed_model, chunker=chunker, index_name=resolved_index_name)
+    return RAG(
+        doc_stack=stack,
+        embed_model=embed_model,
+        db=ElasticsearchVectorDB(
+            model=embed_model,
+            chunker=chunker,
+            index_name=resolved_index_name,
+        )
+    )
 
-rag_system = build_search_db()
-be = RAGAdapter(RAG())
+
+@lru_cache(maxsize=1)
+def get_rag_system() -> RAG:
+    return build_rag_system()
+
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
 
 @app.get("/search/{query}")
-def read_item(query: str | None = None):
-    return {"item_id": item_id, "q": q}
+def answer_query(query: str | None = None):
+    ans = get_rag_system().retrieve(query)
+    return {"answer": ans, "q": query}
