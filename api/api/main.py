@@ -28,7 +28,7 @@ def build_rag_system(index_name: str | None = None) -> RAG:
 @lru_cache(maxsize=1)
 def get_rag_system() -> RAG:
     return build_rag_system()
-
+rag_system = get_rag_system()
 
 @app.get("/")
 def read_root():
@@ -37,5 +37,5 @@ def read_root():
 
 @app.get("/search/{query}")
 def answer_query(query: str | None = None):
-    ans = get_rag_system().retrieve(query)
+    ans = rag_system.retrieve(query)
     return {"answer": ans, "q": query}
