@@ -156,6 +156,38 @@ CLI search interface + evaluation
 
 7. Press Enter on a blank line or type `quit` to exit.
 
+## API
+
+The project also exposes a small FastAPI app.
+
+Start it with:
+
+```bash
+uv run uvicorn api.api.main:app --reload
+```
+
+Available routes:
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/` | Health-style root response. |
+| `GET` | `/search/{query}` | Runs retrieval for the supplied query string and returns the answer payload. |
+
+Example:
+
+```bash
+curl http://127.0.0.1:8000/search/example
+```
+
+Example response:
+
+```json
+{
+  "answer": [],
+  "q": "example"
+}
+```
+
 ## Retrieval Evaluation
 
 This project includes utilities for measuring retrieval quality using precision and recall.
