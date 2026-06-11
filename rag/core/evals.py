@@ -38,9 +38,9 @@ class PrecisionRecall:
     ) -> PrecisionRecallQueryMetrics:
 
         ranked = run_sample.doc_ids
-        relevant_docs = test_sample.doc_ids
+        relevant_docs = set(test_sample.doc_ids)
         if top_k > 0:
-            ranked = ranked[:top_k]
+            ranked = ranked[:top_k] 
 
         hits = sum(1 for doc_id in ranked if doc_id in relevant_docs)
         retrieved = len(ranked)

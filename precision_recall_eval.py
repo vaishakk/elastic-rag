@@ -29,7 +29,7 @@ from rag.core.evals import (
 
 
 DEFAULT_QRELS = Path("rag/evals/test.tsv")
-DEFAULT_QUERIES = Path("rag/evals/queries.jsonl")
+DEFAULT_QUERIES = Path("rag/evals/queries-test.jsonl")
 DEFAULT_RUN = Path("rag/evals/run.tsv")
 DEFAULT_INDEX_NAME = "test-documents"
 

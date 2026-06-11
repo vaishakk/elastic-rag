@@ -10,7 +10,7 @@ from rag import DocumentChunk, DocumentStackFromPDFFolder, ElasticsearchVectorDB
 from rag.rag.pdf_document_reader import PyPDFExtractor
 
 
-DEFAULT_INDEX_NAME = "test-documents"
+DEFAULT_INDEX_NAME = "nfcorp-documents"
 DEFAULT_DOCS_DIR = Path("./docs")
 DEFAULT_MENU_PROMPT = "Select [1] search, [2] reindex ./docs, [q] quit: "
 DEFAULT_PROMPT = "Search query (blank or 'quit' to exit): "
