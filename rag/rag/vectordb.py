@@ -22,6 +22,7 @@ DEFAULT_K = 4
 DEFAULT_NUM_CANDIDATES = 20
 DEFAULT_SIMILARITY = "cosine"
 DEFAULT_SEARCH_METHOD = "vector"
+DEFAULT_RRF_K = 60
 DEFAULT_SEARCH_METHOD = "vector"
 
 class ElasticsearchVectorDB(VectorDB):
@@ -226,6 +227,61 @@ class ElasticsearchVectorDB(VectorDB):
             chunks.append(DocumentChunk(id=chunk_id, doc_id=doc_id, text=text, metadata=metadata))
         return chunks
 
+    @staticmethod
+    def _rrf_score(rank: int, k: int = DEFAULT_RRF_K) -> float:
+        return 1.0 / (k + rank)
+
+    def _merge_search_results(
+        self,
+        vector_hits: List[DocumentChunk],
+        bm25_hits: List[DocumentChunk],
+        *,
+        rrf_k: int = DEFAULT_RRF_K,
+    ) -> List[DocumentChunk]:
+        merged: dict[str, DocumentChunk] = {}
+        vector_ranks: dict[str, int] = {}
+        bm25_ranks: dict[str, int] = {}
+        vector_scores: dict[str, float] = {}
+        bm25_scores: dict[str, float] = {}
+
+        for rank, hit in enumerate(vector_hits, start=1):
+            vector_ranks[hit.id] = rank
+            vector_scores[hit.id] = float(hit.metadata.get("score", 0.0) if hit.metadata else 0.0)
+            merged.setdefault(hit.id, hit)
+
+        for rank, hit in enumerate(bm25_hits, start=1):
+            bm25_ranks[hit.id] = rank
+            bm25_scores[hit.id] = float(hit.metadata.get("score", 0.0) if hit.metadata else 0.0)
+            merged.setdefault(hit.id, hit)
+
+        ranked: list[tuple[float, str]] = []
+        for chunk_id, chunk in merged.items():
+            vector_rank = vector_ranks.get(chunk_id)
+            bm25_rank = bm25_ranks.get(chunk_id)
+            hybrid_score = 0.0
+            if vector_rank is not None:
+                hybrid_score += self._rrf_score(vector_rank, k=rrf_k)
+            if bm25_rank is not None:
+                hybrid_score += self._rrf_score(bm25_rank, k=rrf_k)
+
+            metadata = dict(chunk.metadata or {})
+            if chunk_id in vector_scores:
+                metadata["vector_score"] = vector_scores[chunk_id]
+            if chunk_id in bm25_scores:
+                metadata["bm25_score"] = bm25_scores[chunk_id]
+            metadata["hybrid_score"] = hybrid_score
+            metadata["score"] = hybrid_score
+            merged[chunk_id] = DocumentChunk(
+                id=chunk.id,
+                doc_id=chunk.doc_id,
+                text=chunk.text,
+                metadata=metadata,
+            )
+            ranked.append((hybrid_score, chunk_id))
+
+        ranked.sort(key=lambda item: (-item[0], item[1]))
+        return [merged[chunk_id] for _score, chunk_id in ranked]
+
     def create_db(self, stack: DocumentStack):
         chunks = self._split(stack)
         if not chunks:
@@ -249,7 +305,7 @@ class ElasticsearchVectorDB(VectorDB):
             top_k = kwargs.pop('top_k')
         if 'num_candidates' in kwargs:
             num_candidates = kwargs.pop('num_candidates')
-        return self.search(query, top_k=top_k, num_candidates=num_candidates, search_method=search_method)
+        return self.search(query, top_k=top_k, num_candidates=num_candidates, search_method=search_method, **kwargs)
 
     def _vector_search(self, query: str, *, top_k: int | None = None, num_candidates: int | None = None) -> List[DocumentChunk]:
         query_chunk = DocumentChunk(id="__query__", doc_id="__query__", text=query)
@@ -301,6 +357,18 @@ class ElasticsearchVectorDB(VectorDB):
         hits = response.get("hits", {}).get("hits", [])
         return self._hits_to_chunks(hits)
 
+    def _hybrid_search(
+        self,
+        query: str,
+        *,
+        top_k: int | None = None,
+        num_candidates: int | None = None,
+        rrf_k: int = DEFAULT_RRF_K,
+    ) -> List[DocumentChunk]:
+        vector_hits = self._vector_search(query, top_k=top_k, num_candidates=num_candidates)
+        bm25_hits = self._bm25_search(query, top_k=top_k)
+        return self._merge_search_results(vector_hits, bm25_hits, rrf_k=rrf_k)
+
     def search(
         self,
         query: str,
@@ -308,10 +376,14 @@ class ElasticsearchVectorDB(VectorDB):
         top_k: int | None = None,
         num_candidates: int | None = None,
         search_method: str = DEFAULT_SEARCH_METHOD,
+        **kwargs,
     ) -> List[DocumentChunk]:
         method = (search_method or DEFAULT_SEARCH_METHOD).lower()
         if method == "vector":
             return self._vector_search(query, top_k=top_k, num_candidates=num_candidates)
         if method == "bm25":
             return self._bm25_search(query, top_k=top_k)
+        if method == "hybrid":
+            rrf_k = kwargs.pop("rrf_k", DEFAULT_RRF_K)
+            return self._hybrid_search(query, top_k=top_k, num_candidates=num_candidates, rrf_k=rrf_k)
         raise VectorDBError(f"Unsupported search method: {search_method}")

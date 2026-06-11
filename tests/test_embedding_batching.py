@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 
 from rag.core.document import Chunker, DocumentChunk, DocumentStack
-from rag.core.exceptions import EmbeddingError
+from rag.core.exceptions import EmbeddingError, VectorDBError
 from rag.rag.embedding import OpenAIEmbeddingModel
 from rag.rag.vectordb import ElasticsearchVectorDB
 
@@ -295,7 +295,6 @@ def test_vector_db_retrieve_selects_bm25_search():
                     },
                     "size": 5,
                 },
-                "size": 5,
             },
         )
     ]
@@ -349,3 +348,117 @@ def test_vector_db_retrieve_defaults_to_vector_search():
             },
         )
     ]
+
+
+def test_vector_db_retrieve_hybrid_search_fuses_vector_and_bm25_results():
+    class _Model:
+        def __init__(self):
+            self.calls = 0
+
+        def embed(self, chunk):
+            self.calls += 1
+            return type("E", (), {"embedding": [1.0, 2.0]})()
+
+    class _Client:
+        class indices:
+            @staticmethod
+            def exists(index):
+                return True
+
+        def __init__(self):
+            self.calls = []
+
+        def search(self, index, **kwargs):
+            self.calls.append((index, kwargs))
+            if "knn" in kwargs:
+                return {
+                    "hits": {
+                        "hits": [
+                            {
+                                "_id": "c1",
+                                "_score": 9.0,
+                                "_source": {
+                                    "chunk_id": "c1",
+                                    "doc_id": "d1",
+                                    "content": "vector first",
+                                },
+                            },
+                            {
+                                "_id": "c2",
+                                "_score": 8.0,
+                                "_source": {
+                                    "chunk_id": "c2",
+                                    "doc_id": "d2",
+                                    "content": "vector second",
+                                },
+                            },
+                        ]
+                    }
+                }
+            return {
+                "hits": {
+                    "hits": [
+                        {
+                            "_id": "c2",
+                            "_score": 7.0,
+                            "_source": {
+                                "chunk_id": "c2",
+                                "doc_id": "d2",
+                                "content": "bm25 second",
+                            },
+                        },
+                        {
+                            "_id": "c3",
+                            "_score": 6.0,
+                            "_source": {
+                                "chunk_id": "c3",
+                                "doc_id": "d3",
+                                "content": "bm25 third",
+                            },
+                        },
+                    ]
+                }
+            }
+
+    class _DB(ElasticsearchVectorDB):
+        def _build_client(self):
+            return _Client()
+
+    client = _Client()
+    model = _Model()
+    db = _DB(model=model, chunker=_NoopChunker(), client=client)
+
+    results = db.retrieve("diet and cancer", top_k=2, num_candidates=7, search_method="hybrid")
+
+    assert [chunk.id for chunk in results] == ["c2", "c1", "c3"]
+    assert results[0].metadata["vector_score"] == 8.0
+    assert results[0].metadata["bm25_score"] == 7.0
+    assert results[0].metadata["hybrid_score"] > results[1].metadata["hybrid_score"]
+    assert results[0].metadata["score"] == results[0].metadata["hybrid_score"]
+    assert results[1].metadata["vector_score"] == 9.0
+    assert "bm25_score" not in results[1].metadata
+    assert results[2].metadata["bm25_score"] == 6.0
+    assert len(client.calls) == 2
+    assert "knn" in client.calls[0][1]
+    assert "body" in client.calls[1][1]
+
+
+def test_vector_db_retrieve_rejects_unknown_search_method():
+    class _Model:
+        def embed(self, chunk):
+            return type("E", (), {"embedding": [1.0, 2.0]})()
+
+    class _Client:
+        class indices:
+            @staticmethod
+            def exists(index):
+                return True
+
+    class _DB(ElasticsearchVectorDB):
+        def _build_client(self):
+            return _Client()
+
+    db = _DB(model=_Model(), chunker=_NoopChunker(), client=_Client())
+
+    with pytest.raises(VectorDBError, match="Unsupported search method"):
+        db.retrieve("diet and cancer", search_method="unknown")

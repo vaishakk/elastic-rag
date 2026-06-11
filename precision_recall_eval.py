@@ -201,7 +201,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--search-method",
-        choices=["vector", "bm25"],
+        choices=["vector", "bm25", "hybrid"],
         default="vector",
         help='Search method used to generate the run file (default: "vector").',
     )
