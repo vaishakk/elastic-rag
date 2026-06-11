@@ -29,7 +29,7 @@ from rag.core.evals import (
 
 
 DEFAULT_QRELS = Path("rag/evals/test.tsv")
-DEFAULT_QUERIES = Path("rag/evals/queries.jsonl")
+DEFAULT_QUERIES = Path("rag/evals/queries-test.jsonl")
 DEFAULT_RUN = Path("rag/evals/run.tsv")
 DEFAULT_INDEX_NAME = "test-documents"
 
@@ -130,10 +130,11 @@ def generate_run_rows(
     db: ElasticsearchVectorDB,
     *,
     k: int,
+    search_method: str,
 ) -> list[tuple[str, str, float, int]]:
     rows: list[tuple[str, str, float, int]] = []
     for query in queries:
-        hits = db.search(query.text, top_k=k)
+        hits = db.retrieve(query.text, top_k=k, search_method=search_method)
         for rank, hit in enumerate(hits, start=1):
             score = float(hit.metadata.get("score", 0.0) if hit.metadata else 0.0)
             rows.append((query.query_id, hit.doc_id, score, rank))
@@ -198,6 +199,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Print per-query precision and recall values.",
     )
+    parser.add_argument(
+        "--search-method",
+        choices=["vector", "bm25"],
+        default="vector",
+        help='Search method used to generate the run file (default: "vector").',
+    )
     return parser
 
 
@@ -207,7 +214,7 @@ def main() -> int:
 
     queries = load_queries(args.queries)
     db = build_vector_db(index_name=args.index_name)
-    run_rows = generate_run_rows(queries, db, k=args.k)
+    run_rows = generate_run_rows(queries, db, k=args.k, search_method=args.search_method)
     write_run(args.run, run_rows)
 
     qrels = load_qrels(args.qrels, min_relevance=args.min_relevance)
@@ -221,6 +228,7 @@ def main() -> int:
     print(f"Index: {args.index_name}")
     print(f"Run:   {args.run}")
     print(f"Cutoff: {args.k}")
+    print(f"Search method: {args.search_method}")
     print(f"Relevant threshold: {args.min_relevance}")
     print()
     print(f"Macro precision@{args.k}: {summary.macro_precision:.4f}")

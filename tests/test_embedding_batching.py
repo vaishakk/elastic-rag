@@ -233,3 +233,119 @@ def test_vector_db_skips_chunks_that_already_exist(monkeypatch):
     assert model.calls == 1
     assert client.mget_calls == [("rag-documents", ["existing", "new"])]
     assert [action["_id"] for action in indexed_actions] == ["new"]
+
+
+def test_vector_db_retrieve_selects_bm25_search():
+    class _Model:
+        def embed(self, chunk):
+            raise AssertionError("vector search should not be used")
+
+    class _Client:
+        class indices:
+            @staticmethod
+            def exists(index):
+                return True
+
+        def __init__(self):
+            self.calls = []
+
+        def search(self, index, **kwargs):
+            self.calls.append((index, kwargs))
+            return {
+                "hits": {
+                    "hits": [
+                        {
+                            "_id": "c1",
+                            "_score": 1.23,
+                            "_source": {
+                                "chunk_id": "c1",
+                                "doc_id": "d1",
+                                "content": "matched text",
+                            },
+                        }
+                    ]
+                }
+            }
+
+    class _DB(ElasticsearchVectorDB):
+        def _build_client(self):
+            return _Client()
+
+    client = _Client()
+    db = _DB(model=_Model(), chunker=_NoopChunker(), client=client)
+
+    results = db.retrieve("diet and cancer", search_method="bm25", top_k=5)
+
+    assert len(results) == 1
+    assert results[0].id == "c1"
+    assert results[0].doc_id == "d1"
+    assert results[0].text == "matched text"
+    assert results[0].metadata == {"score": 1.23}
+    assert client.calls == [
+        (
+            "rag-documents",
+            {
+                "body": {
+                    "query": {
+                        "match": {
+                            "content": {
+                                "query": "diet and cancer",
+                            }
+                        }
+                    },
+                    "size": 5,
+                },
+                "size": 5,
+            },
+        )
+    ]
+
+
+def test_vector_db_retrieve_defaults_to_vector_search():
+    class _Model:
+        def __init__(self):
+            self.calls = 0
+
+        def embed(self, chunk):
+            self.calls += 1
+            return type("E", (), {"embedding": [1.0, 2.0]})()
+
+    class _Client:
+        class indices:
+            @staticmethod
+            def exists(index):
+                return True
+
+        def __init__(self):
+            self.calls = []
+
+        def search(self, index, **kwargs):
+            self.calls.append((index, kwargs))
+            return {"hits": {"hits": []}}
+
+    class _DB(ElasticsearchVectorDB):
+        def _build_client(self):
+            return _Client()
+
+    client = _Client()
+    model = _Model()
+    db = _DB(model=model, chunker=_NoopChunker(), client=client)
+
+    results = db.retrieve("diet and cancer", top_k=3, num_candidates=7)
+
+    assert results == []
+    assert model.calls == 1
+    assert client.calls == [
+        (
+            "rag-documents",
+            {
+                "knn": {
+                    "field": "content_vector",
+                    "query_vector": [1.0, 2.0],
+                    "k": 3,
+                    "num_candidates": 7,
+                },
+                "size": 3,
+            },
+        )
+    ]

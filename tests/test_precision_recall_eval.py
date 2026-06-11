@@ -80,7 +80,8 @@ def test_run_generation_from_queries(tmp_path: Path):
 
     class _FakeDB:
         @staticmethod
-        def search(query: str, top_k: int):
+        def retrieve(query: str, top_k: int, search_method: str):
+            assert search_method == "vector"
             if query == "first query":
                 return [
                     type("Hit", (), {"doc_id": "d1", "metadata": {"score": 1.5}})(),
@@ -96,7 +97,7 @@ def test_run_generation_from_queries(tmp_path: Path):
         Query(query_id="q2", text="second query"),
     ]
 
-    rows = generate_run_rows(queries, _FakeDB(), k=2)
+    rows = generate_run_rows(queries, _FakeDB(), k=2, search_method="vector")
     write_run(run_path, rows)
 
     assert run_path.read_text(encoding="utf-8").splitlines() == [
@@ -105,3 +106,26 @@ def test_run_generation_from_queries(tmp_path: Path):
         "q1\td2\t1.0\t2",
         "q2\td3\t2.0\t1",
     ]
+
+
+def test_run_generation_can_use_bm25(tmp_path: Path):
+    queries_path = tmp_path / "queries.jsonl"
+
+    queries_path.write_text(
+        '{"_id": "q1", "text": "first query"}\n',
+        encoding="utf-8",
+    )
+
+    class _FakeDB:
+        @staticmethod
+        def retrieve(query: str, top_k: int, search_method: str):
+            assert search_method == "bm25"
+            assert top_k == 1
+            return [
+                type("Hit", (), {"doc_id": "d1", "metadata": {"score": 3.0}})(),
+            ]
+
+    queries = load_queries(queries_path)
+    rows = generate_run_rows(queries, _FakeDB(), k=1, search_method="bm25")
+
+    assert rows == [("q1", "d1", 3.0, 1)]

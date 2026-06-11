@@ -21,7 +21,8 @@ DEFAULT_CONTENT_FIELD = "content"
 DEFAULT_K = 4
 DEFAULT_NUM_CANDIDATES = 20
 DEFAULT_SIMILARITY = "cosine"
-
+DEFAULT_SEARCH_METHOD = "vector"
+DEFAULT_SEARCH_METHOD = "vector"
 
 class ElasticsearchVectorDB(VectorDB):
     """
@@ -212,6 +213,19 @@ class ElasticsearchVectorDB(VectorDB):
         except Exception as exc:  # pragma: no cover - defensive wrapper
             raise VectorDBError("Failed to bulk index chunks into Elasticsearch") from exc
 
+    def _hits_to_chunks(self, hits) -> List[DocumentChunk]:
+        chunks: List[DocumentChunk] = []
+        for hit in hits:
+            source = hit.get("_source") or {}
+            chunk_id = source.get("chunk_id") or hit.get("_id")
+            doc_id = source.get("doc_id") or ""
+            text = source.get(self.content_field) or ""
+            metadata = {
+                "score": hit.get("_score") or 0,
+            }
+            chunks.append(DocumentChunk(id=chunk_id, doc_id=doc_id, text=text, metadata=metadata))
+        return chunks
+
     def create_db(self, stack: DocumentStack):
         chunks = self._split(stack)
         if not chunks:
@@ -230,13 +244,14 @@ class ElasticsearchVectorDB(VectorDB):
 
     def retrieve(self, query: str, **kwargs) -> list[DocumentChunk]:
         top_k, num_candidates = self.top_k, self.num_candidates
+        search_method = kwargs.pop("search_method", DEFAULT_SEARCH_METHOD)
         if 'top_k' in kwargs:
             top_k = kwargs.pop('top_k')
         if 'num_candidates' in kwargs:
             num_candidates = kwargs.pop('num_candidates')
-        return self.search(query, top_k=top_k, num_candidates=num_candidates)
+        return self.search(query, top_k=top_k, num_candidates=num_candidates, search_method=search_method)
 
-    def search(self, query: str, *, top_k: int | None = None, num_candidates: int | None = None) -> List[DocumentChunk]:
+    def _vector_search(self, query: str, *, top_k: int | None = None, num_candidates: int | None = None) -> List[DocumentChunk]:
         query_chunk = DocumentChunk(id="__query__", doc_id="__query__", text=query)
 
         try:
@@ -262,15 +277,41 @@ class ElasticsearchVectorDB(VectorDB):
             raise VectorDBError("Elasticsearch kNN search failed") from exc
 
         hits = response.get("hits", {}).get("hits", [])
-        chunks: List[DocumentChunk] = []
-        for hit in hits:
-            source = hit.get("_source")
-            chunk_id = source.get("chunk_id") or hit.get("_id")
-            doc_id = source.get("doc_id") or ""
-            text = source.get(self.content_field) or ""
-            metadata = {
-                'score': hit.get("_score") or 0,
-            }
-            chunks.append(DocumentChunk(id=chunk_id, doc_id=doc_id, text=text, metadata=metadata))
+        return self._hits_to_chunks(hits)
 
-        return chunks
+    def _bm25_search(self, query: str, *, top_k: int | None = None) -> List[DocumentChunk]:
+        k = top_k or self.top_k
+
+        body = {
+            "query": {
+                "match": {
+                    self.content_field: {
+                        "query": query,
+                    }
+                }
+            },
+            "size": k,
+        }
+
+        try:
+            response = self.client.search(index=self.index_name, body=body)
+        except Exception as exc:  # pragma: no cover - defensive wrapper
+            raise VectorDBError("Elasticsearch BM25 search failed") from exc
+
+        hits = response.get("hits", {}).get("hits", [])
+        return self._hits_to_chunks(hits)
+
+    def search(
+        self,
+        query: str,
+        *,
+        top_k: int | None = None,
+        num_candidates: int | None = None,
+        search_method: str = DEFAULT_SEARCH_METHOD,
+    ) -> List[DocumentChunk]:
+        method = (search_method or DEFAULT_SEARCH_METHOD).lower()
+        if method == "vector":
+            return self._vector_search(query, top_k=top_k, num_candidates=num_candidates)
+        if method == "bm25":
+            return self._bm25_search(query, top_k=top_k)
+        raise VectorDBError(f"Unsupported search method: {search_method}")
