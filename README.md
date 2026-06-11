@@ -24,6 +24,7 @@ Current support is intentionally narrow:
 - chunking is based on basic LlamaIndex chunking
 - embeddings are currently provided through OpenAI
 - Elasticsearch is used for storing and searching documents
+- retrieval supports vector, BM25, and hybrid BM25 + vector search
 - the main interface is an interactive search CLI
 - retrieval evaluation is supported through precision/recall utilities
 
@@ -201,15 +202,23 @@ The evaluation workflow is intended to support questions such as:
 
 Evaluation-oriented RAG development is especially important because a language model can only produce grounded answers if the retriever provides useful context.
 
+The current benchmark on `rag/evals/test.tsv` and `rag/evals/queries.jsonl` is:
+
+| Search Method | Top k | Precision | Recall | F-Score |
+|---------------|---:|---:|---:|---:|
+| vector        | 10 | 0.29 | 0.18 | 0.22 |
+| vector        | 4 | 0.38 | 0.12 | 0.18 |
+| bm25          | 10 | 0.31 | 0.17 | 0.22 |
+| bm25          | 4 | 0.37 | 0.12 | 0.18 |
+| hybrid        | 10 | 0.27 | 0.19 | 0.22 |
+| hybrid        | 4 | 0.37 | 0.13 | 0.19 |
+
 ## Roadmap
 
 Planned improvements include:
 
-- BM25 retrieval mode
-- hybrid BM25 + vector retrieval
-- reranking support
 - richer document ingestion
-- FastAPI service layer
+- improved FastAPI service layer
 - Docker Compose setup
 - citation-aware answer generation
 - local embedding model support
@@ -224,8 +233,8 @@ Contributions, ideas, and discussions are welcome.
 I am especially interested in collaborating on:
 
 - Elasticsearch-based RAG systems
-- hybrid retrieval using BM25 and vector search
 - retrieval evaluation and benchmarking
+- hybrid retrieval tuning
 - chunking strategies for noisy documents
 - citation-aware answer generation
 - lightweight RAG APIs and developer tooling
@@ -236,8 +245,6 @@ Good first areas for contribution include:
 - adding a Docker Compose setup
 - improving setup documentation
 - adding example datasets
-- implementing BM25 retrieval
-- implementing hybrid retrieval
 - adding tests around retrieval behavior
 - improving evaluation scripts
 - adding support for more embedding providers
