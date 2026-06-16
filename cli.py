@@ -6,7 +6,10 @@ import textwrap
 from pathlib import Path
 from typing import Callable, Iterable, TextIO
 
-from rag import DocumentChunk, DocumentStackFromPDFFolder, ElasticsearchVectorDB, LlamaIndexChunker, OpenAIEmbeddingModel
+from rag import DocumentChunk, DocumentStackFromPDFFolder, ElasticsearchVectorDB, LlamaIndexChunker, \
+    OpenAIEmbeddingModel, DocumentStack, TextExtractor
+from rag.adapters.document_adapters import MDDocumentStackFromFolder, MarkDownExtractor
+from rag.rag.markdown_extractors import DoclingTextExtractor
 from rag.rag.pdf_document_reader import PyPDFExtractor
 
 
@@ -57,8 +60,8 @@ def reindex_docs_folder(
     docs_dir: Path = DEFAULT_DOCS_DIR,
     *,
     output: TextIO = sys.stdout,
-    stack_factory: Callable[[str, PyPDFExtractor], DocumentStackFromPDFFolder] = DocumentStackFromPDFFolder,
-    extractor_factory: Callable[[], PyPDFExtractor] = PyPDFExtractor,
+    stack_factory: Callable[[str, PyPDFExtractor], DocumentStack] = DocumentStackFromPDFFolder,
+    extractor_factory: Callable[[], TextExtractor] = PyPDFExtractor,
 ) -> None:
     stack = stack_factory(str(docs_dir), extractor_factory())
 
@@ -127,7 +130,7 @@ def prompt_main_menu(
             continue
         if choice in {"2", "r", "reindex"}:
             try:
-                reindex_docs_folder(db, output=output)
+                reindex_docs_folder(db, output=output, stack_factory=MDDocumentStackFromFolder, extractor_factory=DoclingTextExtractor)
             except Exception as exc:  # pragma: no cover - runtime environment/config errors
                 print(f"Reindex failed: {exc}", file=output)
             continue
