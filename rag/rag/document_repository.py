@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from rag.core.document import Document, DocumentRepository, DocumentStack
 from rag.core.exceptions import DocumentError
-from rag.rag.pdf_document_reader import PyPDFExtractor
+from rag.rag.document_extractors.pdf_document_reader import PyPDFExtractor
 
 
 class DictDocumentRepository(DocumentRepository):

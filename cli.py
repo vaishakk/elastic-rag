@@ -8,9 +8,9 @@ from typing import Callable, Iterable, TextIO
 
 from rag import DocumentChunk, DocumentStackFromPDFFolder, ElasticsearchVectorDB, LlamaIndexChunker, \
     OpenAIEmbeddingModel, DocumentStack, TextExtractor
-from rag.adapters.document_adapters import MDDocumentStackFromFolder, MarkDownExtractor
-from rag.rag.markdown_extractors import DoclingTextExtractor
-from rag.rag.pdf_document_reader import PyPDFExtractor
+from rag import MDDocumentStackFromFolder
+from rag.rag.document_extractors.markdown_extractors import DoclingTextExtractor
+from rag.rag.document_extractors.pdf_document_reader import PyPDFExtractor
 
 
 DEFAULT_INDEX_NAME = "test-documents"
