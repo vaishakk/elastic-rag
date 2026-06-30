@@ -58,3 +58,8 @@ def run_eval(queries: list[Query], rag: RAG, judge: LLMJudge) -> List[UmbrellaMe
     for query in queries:
         metrics.append(umbrella.evaluate_query(query.text))
     return metrics
+
+def main():
+    queries = load_queries(DEFAULT_QUERIES)
+    for query in queries:
+        metrics = run_eval(queries, rag=query)
