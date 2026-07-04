@@ -30,7 +30,8 @@ class LlamaIndexChunker(Chunker):
 
     def split_doc(self, documents: DocumentStack) -> List[DocumentChunk]:
         llama_docs: List[LlamaDocument] = []
-        for doc in documents.documents:
+        for doc_id in documents.documents:
+            doc = documents.get_doc_by_id(doc_id)
             if not doc.text.strip():
                 continue
             metadata = {

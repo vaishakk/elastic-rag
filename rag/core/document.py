@@ -44,8 +44,8 @@ class DocumentStack:
         documents (List[str]): List of Document ids.
         repo: Document repository that holds all the documents in the stack.
     """
-    documents: List[str] # List of doc ids
     repo: DocumentRepo
+    documents: List[str]  # List of doc ids
 
     def add(self, document: Document):
         """
@@ -55,6 +55,10 @@ class DocumentStack:
             document (Document): The document to add.
         """
         self.repo.add_doc(document)
+        self.documents.append(document.id)
+
+    def get_doc_by_id(self, id: str) -> Document:
+        return self.repo.get_doc_by_id(id)
 
     def __len__(self):
         """
