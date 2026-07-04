@@ -1,13 +1,14 @@
 import os
 from functools import lru_cache
-
 from fastapi import FastAPI
 
-from rag import ElasticsearchVectorDB, OpenAIEmbeddingModel, LlamaIndexChunker, RAG
-from rag.rag.document_extractors.markdown_extractors import DocumentStackFromMarkdownFolder, PlainTextExtractor
+from rag.rag.vectordb import ElasticsearchVectorDB
+from rag.rag.embedding import OpenAIEmbeddingModel
+from rag.rag.chunkers import LlamaIndexChunker
+from rag.core.rag import RAG
+from rag.rag.markdown_extractors import DocumentStackFromMarkdownFolder, PlainTextExtractor
 
 app = FastAPI()
-
 
 def build_rag_system(index_name: str | None = None) -> RAG:
     # stack = DocumentStackFromPDFFolder('./docs', PyPDFExtractor())
