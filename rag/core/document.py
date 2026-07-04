@@ -22,23 +22,30 @@ class Document:
     text: str = field(repr=False)
     summary: str = None
 
+class DocumentRepo(ABC):
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_doc_by_id(self, id: str) -> Document:
+        pass
+
+    @abstractmethod
+    def add_doc(self, document: Document) -> bool:
+        pass
+
 @dataclass
 class DocumentStack:
     """
     Holds a collection of Document objects and concatenates their text.
 
     Attributes:
-        documents (List[Document]): List of Document instances.
-        text (str): Combined text of all documents separated by double newlines.
+        documents (List[str]): List of Document ids.
+        repo: Document repository that holds all the documents in the stack.
     """
-    documents: List[Document]
-    text: str = ''
-
-    def __post_init__(self):
-        """
-        Initialize the combined text for the stack by joining all document texts.
-        """
-        self.text = "\n\n".join([doc.text for doc in self.documents])
+    documents: List[str] # List of doc ids
+    repo: DocumentRepo
 
     def add(self, document: Document):
         """
@@ -47,8 +54,7 @@ class DocumentStack:
         Args:
             document (Document): The document to add.
         """
-        self.documents.append(document)
-        self.text = "\n\n".join([self.text, document.text])
+        self.repo.add_doc(document)
 
     def __len__(self):
         """
