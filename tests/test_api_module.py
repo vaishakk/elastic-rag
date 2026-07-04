@@ -29,7 +29,7 @@ def test_build_rag_system_uses_supplied_index_name(monkeypatch):
                 "db": db,
             }
 
-    monkeypatch.setattr(main, "DocumentStackFromPDFFolder", lambda folder, extractor: ("stack", folder, extractor))
+    monkeypatch.setattr(main, "DocumentStackFromMarkdownFolder", lambda folder, extractor: ("stack", folder, extractor))
     monkeypatch.setattr(main, "PyPDFExtractor", lambda: "extractor")
     monkeypatch.setattr(main, "OpenAIEmbeddingModel", lambda: "embed-model")
     monkeypatch.setattr(main, "LlamaIndexChunker", lambda: "chunker")
