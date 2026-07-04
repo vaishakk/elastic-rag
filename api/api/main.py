@@ -1,8 +1,12 @@
 import os
 from functools import lru_cache
-
 from fastapi import FastAPI
 
+from rag.rag.vectordb import ElasticsearchVectorDB
+from rag.rag.embedding import OpenAIEmbeddingModel
+from rag.rag.chunkers import LlamaIndexChunker
+from rag.core.rag import RAG
+from rag.rag.markdown_extractors import DocumentStackFromMarkdownFolder, PlainTextExtractor
 from rag import ElasticsearchVectorDB, OpenAIEmbeddingModel, LlamaIndexChunker, RAG
 from rag.rag.document_extractors.markdown_extractors import DocumentStackFromMarkdownFolder, PlainTextExtractor
 
@@ -40,3 +44,9 @@ def read_root():
 def answer_query(query: str | None = None):
     ans = rag_system.retrieve(query)
     return {"answer": ans, "q": query}
+
+if __name__ == "__main__":
+    # This block only runs if you do: python main.py
+    rag_system = get_rag_system()
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
