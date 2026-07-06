@@ -1,10 +1,6 @@
-from pathlib import Path
+from pypdf.errors import PdfStreamError
 
-from pypdf.errors import PdfReadError, PdfStreamError
-
-from rag import DocumentError
-from rag.adapters.document_adapters import *
-import os
+from rag.adapters.document_adapters.document_adapters import *
 from pypdf import PdfReader
 
 class PyPDFExtractor(TextExtractor):
@@ -12,7 +8,7 @@ class PyPDFExtractor(TextExtractor):
     def __init__(self):
         super().__init__()
 
-    def extract_text(self, url: Path):
+    def extract_text(self, url: Path, **kwargs):
         if url.suffix.lower() != '.pdf':
             raise DocumentError('Only PDF is supported.')
         try:
@@ -29,6 +25,3 @@ class PyPDFExtractor(TextExtractor):
             title = reader.metadata['/Title']
         return text, title
 
-# docs = DocumentStackFromPDFFolder(docs_folder, PyPDFExtractor())
-# print([doc.title for doc in docs.documents])
-# print(len(docs))

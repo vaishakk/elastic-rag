@@ -1,12 +1,10 @@
 import os
 from functools import lru_cache
-from pathlib import Path
 
 from fastapi import FastAPI
 
-from rag import ElasticsearchVectorDB, OpenAIEmbeddingModel, LlamaIndexChunker, RAG, DocumentStackFromPDFFolder, \
-    PyPDFExtractor
-from rag.rag.markdown_extractors import DocumentStackFromMarkdownFolder, PlainTextExtractor
+from rag import ElasticsearchVectorDB, OpenAIEmbeddingModel, LlamaIndexChunker, RAG
+from rag.rag.document_extractors.markdown_extractors import DocumentStackFromMarkdownFolder, PlainTextExtractor
 
 app = FastAPI()
 

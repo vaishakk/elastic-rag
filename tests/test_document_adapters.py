@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rag.adapters.document_adapters import DocumentStackFromPDFFolder
+from rag.adapters.document_adapters.document_adapters import DocumentStackFromPDFFolder
 
 
 class _FakeExtractor:

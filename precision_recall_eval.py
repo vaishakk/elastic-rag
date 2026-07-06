@@ -27,7 +27,6 @@ from rag.core.evals import (
     QrelSample,
 )
 
-
 DEFAULT_QRELS = Path("rag/evals/test.tsv")
 DEFAULT_QUERIES = Path("rag/evals/queries-test.jsonl")
 DEFAULT_RUN = Path("rag/evals/run.tsv")

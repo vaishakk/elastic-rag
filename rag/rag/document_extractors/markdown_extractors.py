@@ -4,9 +4,7 @@ from typing import List
 
 from docling.document_converter import DocumentConverter
 
-from rag import DocumentError, DocumentStack, Document
-from rag.adapters.document_adapters import MarkDownExtractor, TextExtractor
-
+from rag import DocumentError, DocumentStack, Document, TextExtractor, MarkDownExtractor
 
 class DoclingTextExtractor(MarkDownExtractor):
 

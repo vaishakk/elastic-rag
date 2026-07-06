@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rag.core.evals import (
+from rag.core.evals.precision_recall import (
     PrecisionRecall,
     PrecisionRecallQueryMetrics,
     QrelSample,
