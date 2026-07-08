@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -22,6 +22,12 @@ class Document:
     text: str = field(repr=False)
     summary: str = None
 
+class DocumentExtractor(ABC):
+
+    @abstractmethod
+    def extract_text(self, url: str) -> Tuple[str, str]:
+        pass
+
 class DocumentRepo(ABC):
 
     def __init__(self):
@@ -38,7 +44,7 @@ class DocumentRepo(ABC):
 @dataclass
 class DocumentStack:
     """
-    Holds a collection of Document objects and concatenates their text.
+    Holds a collection of Document objects.
 
     Attributes:
         documents (List[str]): List of Document ids.
@@ -46,6 +52,11 @@ class DocumentStack:
     """
     repo: DocumentRepo
     documents: List[str]  # List of doc ids
+
+    def __init__(self, repo: DocumentRepo, doc_extractor: DocumentExtractor):
+        self.repo = repo
+        self.doc_extractor = doc_extractor
+        self.documents = []
 
     def add(self, document: Document):
         """
