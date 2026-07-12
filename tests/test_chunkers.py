@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from rag.core.document import Document, DocumentStack, DocumentRepo
+from rag.core.document import Document, DocumentStack, DocumentRepo, DocumentExtractor, DocumentChunk
 from rag.rag.chunkers import LlamaIndexChunker
 
 
@@ -12,6 +12,10 @@ class _FakeNode:
     text: str
     metadata: dict
 
+class DummyExtract(DocumentExtractor):
+
+    def extract_text(self, url: str):
+        return 'extracted title', 'extracted text'
 
 class _FakeParser:
     def __init__(self, nodes):
@@ -48,7 +52,7 @@ def test_llama_index_chunker_uses_hash_of_chunk_text_for_ids():
         ]
     )
 
-    stack = DocumentStack(repo=InMemoryRepo(), documents=[])
+    stack = DocumentStack(repo=InMemoryRepo(), doc_extractor=DummyExtract())
     documents=[
         Document(id="doc-1", path=Path("doc-1.txt"), title="Doc 1", text="x"),
         Document(id="doc-2", path=Path("doc-2.txt"), title="Doc 2", text="y"),
@@ -65,3 +69,25 @@ def test_llama_index_chunker_uses_hash_of_chunk_text_for_ids():
     assert chunks[0].doc_id == "doc-1"
     assert chunks[1].doc_id == "doc-2"
     assert chunks[2].doc_id == "doc-3"
+
+def test_split_doc():
+    stack = DocumentStack(repo=InMemoryRepo(), doc_extractor=DummyExtract())
+    documents = [
+        Document(id="doc-1", path=Path("doc-1.txt"), title="Doc 1", text="x"),
+        Document(id="doc-2", path=Path("doc-2.txt"), title="Doc 2", text="y"),
+        Document(id="doc-3", path=Path("doc-3.txt"), title="Doc 3", text="z"),
+    ]
+    for document in documents:
+        stack.add(document)
+    chunker = LlamaIndexChunker()
+    chunks = chunker.split_doc(stack)
+    assert chunks[0].text == "x"
+    assert len(chunks) == 3
+    assert len(chunks[0].text) < 512
+
+def test_same_chunk_id_for_same_text():
+    chunker = LlamaIndexChunker(chunk_size=16, chunk_overlap=0)
+    id1 = chunker._chunk_id("same chunk text")
+    id2 = chunker._chunk_id("same chunk text")
+    assert id1 == id2
+

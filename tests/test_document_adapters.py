@@ -2,12 +2,28 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rag.adapters.document_adapters.document_adapters import DocumentStackFromPDFFolder
+from rag import DocumentStackFromFolder
+from rag.core.document import DocumentRepo, Document, DocumentExtractor
 
 
-class _FakeExtractor:
+class _FakeExtractor(DocumentExtractor):
     def extract_text(self, url: Path):
         return f"text:{url.name}", f"title:{url.name}"
+
+class InMemoryRepo(DocumentRepo):
+
+    store: dict[str,Document] = {}
+
+    def add_doc(self, document: Document) -> bool:
+        if self.store is None:
+            return False
+        self.store[document.id] = document
+        return True
+
+    def get_doc_by_id(self, id:str):
+        if not self.store:
+            return None
+        return self.store[id]
 
 
 def test_document_stack_from_pdf_folder_recurses_into_subfolders(tmp_path: Path):
@@ -22,7 +38,7 @@ def test_document_stack_from_pdf_folder_recurses_into_subfolders(tmp_path: Path)
     deeper.mkdir()
     (deeper / "grandchild.pdf").write_bytes(b"%PDF-1.4")
 
-    stack = DocumentStackFromPDFFolder(tmp_path, _FakeExtractor())
+    stack = DocumentStackFromFolder(str(tmp_path), InMemoryRepo(), _FakeExtractor())
 
     assert {doc.path for doc in stack.documents} == {
         tmp_path / "root.pdf",

@@ -29,7 +29,7 @@ class DocumentStackFromFolder(DocumentStack):
             raise DocumentError(e)
         for idx, file in enumerate(files):
             try:
-                text, title = self.extractor.extract_text(str(file))
+                title, text = self.extractor.extract_text(str(file))
             except:
                 continue
             doc = Document(
