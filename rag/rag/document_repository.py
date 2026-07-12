@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import ClassVar
 
-from rag.core.document import Document, DocumentRepository, DocumentStack
+from rag.core.document import Document, DocumentRepo
 from rag.core.exceptions import DocumentError
 
-class DictDocumentRepository(DocumentRepository):
+class DictDocumentRepository(DocumentRepo):
     """Simple in-memory repository backed by a class-level dictionary."""
 
     _docs: ClassVar[dict[str, Document]] = {}

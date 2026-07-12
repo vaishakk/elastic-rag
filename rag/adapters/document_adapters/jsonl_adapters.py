@@ -1,10 +1,12 @@
+import json
 from pathlib import Path
 from typing import List
 
 from rag import DocumentError, TextExtractor, Document, DocumentStack
+from rag.core.document import DocumentExtractor
 
 
-class JSONLExtractor(TextExtractor):
+class JSONLExtractor(DocumentExtractor):
     """
     Default extractor for JSONL records.
 

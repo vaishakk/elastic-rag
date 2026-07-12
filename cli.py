@@ -6,7 +6,7 @@ import textwrap
 from pathlib import Path
 from typing import Callable, Iterable, TextIO
 
-from rag import DocumentChunk, DocumentStackFromPDFFolder, ElasticsearchVectorDB, LlamaIndexChunker, \
+from rag import DocumentChunk, DocumentStackFromFolder, ElasticsearchVectorDB, LlamaIndexChunker, \
     OpenAIEmbeddingModel, DocumentStack, TextExtractor
 from rag import MDDocumentStackFromFolder
 from rag.rag.document_extractors.markdown_extractors import DoclingTextExtractor
@@ -60,7 +60,7 @@ def reindex_docs_folder(
     docs_dir: Path = DEFAULT_DOCS_DIR,
     *,
     output: TextIO = sys.stdout,
-    stack_factory: Callable[[str, PyPDFExtractor], DocumentStack] = DocumentStackFromPDFFolder,
+    stack_factory: Callable[[str, PyPDFExtractor], DocumentStack] = DocumentStackFromFolder,
     extractor_factory: Callable[[], TextExtractor] = PyPDFExtractor,
 ) -> None:
     stack = stack_factory(str(docs_dir), extractor_factory())

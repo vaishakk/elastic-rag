@@ -43,6 +43,7 @@ class ElasticsearchVectorDB(VectorDB):
         num_candidates: int | None = None,
         dims: int | None = None,
         similarity: str | None = None,
+        skip_indexing: bool = False,
     ):
         super().__init__(model=model)
         self.chunker = chunker
@@ -56,6 +57,7 @@ class ElasticsearchVectorDB(VectorDB):
         )
         self.dims = dims
         self.similarity = similarity or os.environ.get("ES_SIMILARITY", DEFAULT_SIMILARITY)
+        self.skip_indexing = skip_indexing
 
     @staticmethod
     def _project_root() -> Path:
@@ -135,7 +137,7 @@ class ElasticsearchVectorDB(VectorDB):
             return set()
 
         try:
-            response = self.client.mget(index=self.index_name, ids=unique_ids)
+            response = self.client.mget(index=self.index_name, ids=unique_ids, source=False)
         except Exception as exc:  # pragma: no cover - defensive wrapper
             raise VectorDBError("Failed to check existing chunk ids in Elasticsearch") from exc
 
@@ -283,13 +285,19 @@ class ElasticsearchVectorDB(VectorDB):
         return [merged[chunk_id] for _score, chunk_id in ranked]
 
     def create_db(self, stack: DocumentStack):
+        if self.skip_indexing:
+            return
         chunks = self._split(stack)
+        if not chunks:
+            chunks = self._split(stack)
         if not chunks:
             raise VectorDBError("Document stack produced no chunks")
 
         self._index_chunks(chunks)
 
     def add_stack(self, stack: DocumentStack):
+        if self.skip_indexing:
+            return
         chunks = self._split(stack)
         if not chunks:
             return

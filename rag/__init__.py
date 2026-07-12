@@ -25,9 +25,8 @@ from rag.adapters.document_adapters.jsonl_adapters import (
     DocumentFromJSONL,
     DocumentStackFromJSONLFile,
 )
-from rag.adapters.document_adapters.pdf_adapters import (
-    DocumentFromPDF,
-    DocumentStackFromPDFFolder
+from rag.adapters.stack_from_folder import (
+    DocumentStackFromFolder
 )
 from rag.adapters.document_adapters.markdown_adapters import (
     MarkDownExtractor,
@@ -43,11 +42,10 @@ __all__ = [
     "Document",
     "DocumentChunk",
     "DocumentError",
-    "DocumentFromPDF",
     "DocumentFromJSONL",
     "DocumentRepository",
     "DocumentStack",
-    "DocumentStackFromPDFFolder",
+    "DocumentStackFromFolder",
     "DocumentStackFromJSONLFile",
     "ElasticsearchVectorDB",
     "Embedding",

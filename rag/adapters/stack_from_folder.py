@@ -24,7 +24,7 @@ class DocumentStackFromFolder(DocumentStack):
         if not os.path.isdir(folder_url):
             raise DocumentError('Folder url {} does not exist'.format(folder_url))
         try:
-            files = self.list_dir(folder_url)
+            files = list_dir(folder_url)
         except DocumentError as e:
             raise DocumentError(e)
         for idx, file in enumerate(files):
@@ -42,20 +42,20 @@ class DocumentStackFromFolder(DocumentStack):
             self.add(doc)
 
 
-    def list_dir(self, folder_url: str) -> List[Path]:
-        """
-        List PDF files within the specified folder and all nested subfolders.
+def list_dir(folder_url: str) -> List[Path]:
+    """
+    List PDF files within the specified folder and all nested subfolders.
 
-        Args:
-            folder_url (str): Path or URL to the folder.
+    Args:
+        folder_url (str): Path or URL to the folder.
 
-        Returns:
-            List[Path]: Paths to all PDF files found.
-        """
-        root = Path(folder_url)
-        files = sorted(
-            file for file in root.rglob("*")
-        )
-        if not files:
-            raise DocumentError('No files found in {}'.format(folder_url))
-        return files
+    Returns:
+        List[Path]: Paths to all PDF files found.
+    """
+    root = Path(folder_url)
+    files = sorted(
+        file for file in root.rglob("*")
+    )
+    if not files:
+        raise DocumentError('No files found in {}'.format(folder_url))
+    return files

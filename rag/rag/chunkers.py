@@ -47,7 +47,7 @@ class LlamaIndexChunker(Chunker):
         try:
             nodes = self._parser.get_nodes_from_documents(llama_docs)
         except Exception as exc:  # pragma: no cover - defensive against parser errors
-            raise ChunkingError("Failed to chunk documents using LlamaIndex") from exc
+            raise ChunkingError(str(exc)) from exc
 
         chunks: List[DocumentChunk] = []
         for node in nodes:

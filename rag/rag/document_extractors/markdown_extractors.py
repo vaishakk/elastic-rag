@@ -4,7 +4,9 @@ from typing import List
 
 from docling.document_converter import DocumentConverter
 
-from rag import DocumentError, DocumentStack, Document, TextExtractor, MarkDownExtractor
+from rag import DocumentError, DocumentStack, Document, TextExtractor, MarkDownExtractor, DocumentStackFromFolder
+from rag.core.document import DocumentRepo, DocumentExtractor
+
 
 class DoclingTextExtractor(MarkDownExtractor):
 
@@ -21,7 +23,7 @@ class DoclingTextExtractor(MarkDownExtractor):
             raise DocumentError(e)
         return '', result.document.export_to_markdown()
 
-class PlainTextExtractor(TextExtractor):
+class PlainTextExtractor(DocumentExtractor):
 
     def __init__(self):
         super().__init__()
@@ -37,36 +39,10 @@ class PlainTextExtractor(TextExtractor):
             raise DocumentError(e)
         return title, text
 
-class DocumentStackFromMarkdownFolder(DocumentStack):
+class DocumentStackFromMarkdownFolder(DocumentStackFromFolder):
 
-    def __init__(self, url: str, extractor: PlainTextExtractor):
-        if not os.path.isdir(url):
-            raise DocumentError('Folder url {} does not exist'.format(url))
-        self.extractor = extractor
-        root = Path(url)
-        self.md_files = sorted(
-            file for file in root.rglob("*")
-            if file.is_file() and file.suffix.lower() == ".md"
-        )
-        if not self.md_files:
-            raise DocumentError('No markdown files found in {}'.format(url))
-        docs: List[Document] = []
-        for idx, md_file in enumerate(self.md_files):
-            title, text = self.extract_text(md_file)
-            docs.append(
-                Document(
-                    id=str(idx),
-                    title=title,
-                    text=text,
-                    path=md_file
-                )
-            )
-        super().__init__(docs, url)
-
-    def extract_text(self, url: Path, **kwargs):
-
-        return self.extractor.extract_text(url, **kwargs)
-
+    def __init__(self, url: str, doc_repo: DocumentRepo):
+        super().__init__(url, doc_repo, PlainTextExtractor())
 
 
 

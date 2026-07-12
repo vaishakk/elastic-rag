@@ -3,7 +3,10 @@ from pypdf.errors import PdfStreamError
 from rag.adapters.document_adapters.document_adapters import *
 from pypdf import PdfReader
 
-class PyPDFExtractor(TextExtractor):
+from rag.core.document import DocumentExtractor
+
+
+class PyPDFExtractor(DocumentExtractor):
 
     def __init__(self):
         super().__init__()
@@ -23,5 +26,5 @@ class PyPDFExtractor(TextExtractor):
             text += page.extract_text()
         if '/Title' in reader.metadata:
             title = reader.metadata['/Title']
-        return text, title
+        return title, text
 

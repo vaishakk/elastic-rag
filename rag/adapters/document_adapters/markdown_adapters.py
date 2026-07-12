@@ -4,11 +4,12 @@ from pathlib import Path
 from typing import List, Union, Sequence
 
 from rag import Document, DocumentError, DocumentStack
+from rag.core.document import DocumentExtractor
 
 
-class MarkDownExtractor(ABC):
+class MarkDownExtractor(DocumentExtractor):
 
-    @abstractmethod
+
     def extract_text(self, url: Path, **kwargs) -> Union[Sequence[str], DocumentError]:
         """
         Extract the full text and title from a supported file.
