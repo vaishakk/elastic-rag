@@ -29,8 +29,9 @@ class DocumentStackFromFolder(DocumentStack):
             raise DocumentError(e)
         for idx, file in enumerate(files):
             try:
-                title, text = self.extractor.extract_text(str(file))
-            except:
+                title, text = self.extractor.extract_text(file)
+            except Exception as e:
+                print(f'Hit exception {e} on file {file}')
                 continue
             doc = Document(
                     id=str(idx),
@@ -55,6 +56,7 @@ def list_dir(folder_url: str) -> List[Path]:
     root = Path(folder_url)
     files = sorted(
         file for file in root.rglob("*")
+        if file.is_file()
     )
     if not files:
         raise DocumentError('No files found in {}'.format(folder_url))

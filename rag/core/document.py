@@ -25,7 +25,7 @@ class Document:
 class DocumentExtractor(ABC):
 
     @abstractmethod
-    def extract_text(self, url: str) -> Tuple[str, str, dict] | Generator[Tuple[str, str, dict], Any, None]:
+    def extract_text(self, url: Path) -> Tuple[str, str, dict] | Generator[Tuple[str, str, dict], Any, None]:
         pass
 
 class DocumentRepo(ABC):

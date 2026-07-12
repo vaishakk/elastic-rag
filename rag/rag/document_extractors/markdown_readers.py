@@ -1,10 +1,7 @@
-import os
 from pathlib import Path
-from typing import List
-
 from docling.document_converter import DocumentConverter
 
-from rag import DocumentError, MarkDownExtractor, DocumentStackFromFolder
+from rag import DocumentError, DocumentStackFromFolder
 from rag.core.document import DocumentRepo, DocumentExtractor
 
 
