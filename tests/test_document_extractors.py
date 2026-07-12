@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from rag import DictDocumentRepository
-from rag.rag.document_extractors.markdown_extractors import PlainTextExtractor, DocumentStackFromMarkdownFolder
+from rag.rag.document_extractors.markdown_readers import PlainTextExtractor, DocumentStackFromMarkdownFolder
 
 
 def test_plain_text_extract():

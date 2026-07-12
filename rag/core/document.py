@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Generator, Any
 
 
 @dataclass
@@ -25,7 +25,7 @@ class Document:
 class DocumentExtractor(ABC):
 
     @abstractmethod
-    def extract_text(self, url: str) -> Tuple[str, str]:
+    def extract_text(self, url: str) -> Tuple[str, str, dict] | Generator[Tuple[str, str, dict], Any, None]:
         pass
 
 class DocumentRepo(ABC):

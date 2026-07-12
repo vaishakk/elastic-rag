@@ -9,7 +9,7 @@ from rag import ElasticsearchVectorDB, DictDocumentRepository
 from rag.rag.embedding import OpenAIEmbeddingModel
 from rag.rag.chunkers import LlamaIndexChunker
 from rag.core.rag import RAG
-from rag.rag.document_extractors.markdown_extractors import DocumentStackFromMarkdownFolder
+from rag.rag.document_extractors.markdown_readers import DocumentStackFromMarkdownFolder
 
 #app = FastAPI()
 

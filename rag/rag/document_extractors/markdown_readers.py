@@ -4,11 +4,11 @@ from typing import List
 
 from docling.document_converter import DocumentConverter
 
-from rag import DocumentError, DocumentStack, Document, TextExtractor, MarkDownExtractor, DocumentStackFromFolder
+from rag import DocumentError, MarkDownExtractor, DocumentStackFromFolder
 from rag.core.document import DocumentRepo, DocumentExtractor
 
 
-class DoclingTextExtractor(MarkDownExtractor):
+class DoclingTextExtractor(DocumentExtractor):
 
     def __init__(self):
         super().__init__()

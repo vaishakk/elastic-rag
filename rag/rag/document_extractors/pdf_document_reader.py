@@ -1,10 +1,9 @@
+from pathlib import Path
 from pypdf.errors import PdfStreamError
-
-from rag.adapters.document_adapters.document_adapters import *
 from pypdf import PdfReader
 
+from rag import DocumentError
 from rag.core.document import DocumentExtractor
-
 
 class PyPDFExtractor(DocumentExtractor):
 

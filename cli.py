@@ -9,7 +9,7 @@ from typing import Callable, Iterable, TextIO
 from rag import DocumentChunk, DocumentStackFromFolder, ElasticsearchVectorDB, LlamaIndexChunker, \
     OpenAIEmbeddingModel, DocumentStack, TextExtractor
 from rag import MDDocumentStackFromFolder
-from rag.rag.document_extractors.markdown_extractors import DoclingTextExtractor
+from rag.rag.document_extractors.markdown_readers import DoclingTextExtractor
 from rag.rag.document_extractors.pdf_document_reader import PyPDFExtractor
 
 
