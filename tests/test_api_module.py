@@ -52,9 +52,8 @@ def test_build_rag_system_uses_supplied_index_name(monkeypatch):
 
 
 def test_root_route_returns_hello_world():
-    client = TestClient(main.create_app())
-
-    response = client.get("/")
+    with TestClient(main.create_app()) as client:
+        response = client.get("/")
 
     assert response.status_code == 200
     assert response.json() == {"Hello": "World"}
@@ -65,10 +64,32 @@ def test_search_route_uses_rag_system(monkeypatch):
         def retrieve(self, query, **kwargs):
             return [{"query": query, "kwargs": kwargs}]
 
-    client = TestClient(main.create_app(lambda: FakeRAG()))
+    with TestClient(main.create_app(lambda: FakeRAG())) as client:
+        response = client.get("/search/example")
 
-    response = client.get("/search/example")
+    assert response.status_code == 200
+    assert response.json() == {
+        "answer": [{"query": "example", "kwargs": {}}],
+        "q": "example",
+    }
 
+
+def test_rag_system_is_loaded_during_startup():
+    calls = {"count": 0}
+
+    class FakeRAG:
+        def retrieve(self, query, **kwargs):
+            return [{"query": query, "kwargs": kwargs}]
+
+    def provider():
+        calls["count"] += 1
+        return FakeRAG()
+
+    with TestClient(main.create_app(provider)) as client:
+        assert calls["count"] == 1
+        response = client.get("/search/example")
+
+    assert calls["count"] == 1
     assert response.status_code == 200
     assert response.json() == {
         "answer": [{"query": "example", "kwargs": {}}],

@@ -1,5 +1,6 @@
 import os
 from functools import lru_cache
+from contextlib import asynccontextmanager
 from typing import Annotated, Callable
 
 from fastapi import Depends, FastAPI
@@ -34,14 +35,25 @@ def get_rag_system() -> RAG:
 
 
 def create_app(rag_provider: Callable[[], RAG] = get_rag_system) -> FastAPI:
-    app = FastAPI()
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        app.state.rag_system = rag_provider()
+        yield
+
+    app = FastAPI(lifespan=lifespan)
+
+    def get_rag_system_dependency() -> RAG:
+        rag_system = getattr(app.state, "rag_system", None)
+        if rag_system is None:
+            raise RuntimeError("RAG system was not loaded during application startup")
+        return rag_system
 
     @app.get("/")
     def read_root():
         return {"Hello": "World"}
 
     @app.get("/search/{query}")
-    def answer_query(query: str, rag_system: Annotated[RAG, Depends(rag_provider)]):
+    def answer_query(query: str, rag_system: Annotated[RAG, Depends(get_rag_system_dependency)]):
         ans = rag_system.retrieve(query)
         return {"answer": ans, "q": query}
 
