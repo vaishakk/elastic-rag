@@ -14,23 +14,25 @@ def test_build_rag_system_uses_supplied_index_name(monkeypatch):
     created: dict[str, object] = {}
 
     class FakeVectorDB:
-        def __init__(self, model, chunker, index_name=None):
+        def __init__(self, model, chunker, index_name=None, **kwargs):
             created["vector_db"] = {
                 "model": model,
                 "chunker": chunker,
                 "index_name": index_name,
+                "kwargs": kwargs,
             }
 
     class FakeRAG:
-        def __init__(self, doc_stack, embed_model, db):
+        def __init__(self, doc_stack, embed_model, db, skip_indexing=True):
             created["rag"] = {
                 "doc_stack": doc_stack,
                 "embed_model": embed_model,
                 "db": db,
+                "skip_indexing": skip_indexing,
             }
 
-    monkeypatch.setattr(main, "DocumentStackFromPDFFolder", lambda folder, extractor: ("stack", folder, extractor))
-    monkeypatch.setattr(main, "PyPDFExtractor", lambda: "extractor")
+    monkeypatch.setattr(main, "DocumentStackFromMarkdownFolder", lambda folder, extractor: ("stack", folder, extractor))
+    monkeypatch.setattr(main, "DictDocumentRepository", lambda: "repo")
     monkeypatch.setattr(main, "OpenAIEmbeddingModel", lambda: "embed-model")
     monkeypatch.setattr(main, "LlamaIndexChunker", lambda: "chunker")
     monkeypatch.setattr(main, "ElasticsearchVectorDB", FakeVectorDB)
@@ -39,19 +41,19 @@ def test_build_rag_system_uses_supplied_index_name(monkeypatch):
     rag_system = main.build_rag_system(index_name="custom-index")
 
     assert isinstance(rag_system, FakeRAG)
-    assert created["rag"]["doc_stack"] == ("stack", "./docs", "extractor")
+    assert created["rag"]["doc_stack"] == ("stack", "./docs/Markdowns", "repo")
     assert created["rag"]["embed_model"] == "embed-model"
     assert created["vector_db"] == {
         "model": "embed-model",
         "chunker": "chunker",
         "index_name": "custom-index",
+        "kwargs": {"skip_indexing": True},
     }
 
 
 def test_root_route_returns_hello_world():
-    client = TestClient(main.app)
-
-    response = client.get("/")
+    with TestClient(main.create_app()) as client:
+        response = client.get("/")
 
     assert response.status_code == 200
     assert response.json() == {"Hello": "World"}
@@ -62,11 +64,32 @@ def test_search_route_uses_rag_system(monkeypatch):
         def retrieve(self, query, **kwargs):
             return [{"query": query, "kwargs": kwargs}]
 
-    monkeypatch.setattr(main, "get_rag_system", lambda: FakeRAG())
-    client = TestClient(main.app)
+    with TestClient(main.create_app(lambda: FakeRAG())) as client:
+        response = client.get("/search/example")
 
-    response = client.get("/search/example")
+    assert response.status_code == 200
+    assert response.json() == {
+        "answer": [{"query": "example", "kwargs": {}}],
+        "q": "example",
+    }
 
+
+def test_rag_system_is_loaded_during_startup():
+    calls = {"count": 0}
+
+    class FakeRAG:
+        def retrieve(self, query, **kwargs):
+            return [{"query": query, "kwargs": kwargs}]
+
+    def provider():
+        calls["count"] += 1
+        return FakeRAG()
+
+    with TestClient(main.create_app(provider)) as client:
+        assert calls["count"] == 1
+        response = client.get("/search/example")
+
+    assert calls["count"] == 1
     assert response.status_code == 200
     assert response.json() == {
         "answer": [{"query": "example", "kwargs": {}}],

@@ -16,22 +16,14 @@ from rag.core.vectordb import VectorDB
 from rag.rag.chunkers import LlamaIndexChunker
 from rag.rag.document_repository import DictDocumentRepository
 from rag.rag.embedding import OpenAIEmbeddingModel
-from rag.rag.document_extractors.pdf_document_reader import (
-    TextExtractor,
-    PyPDFExtractor,
-)
+from rag.rag.document_extractors.pdf_document_reader import PyPDFExtractor
 from rag.adapters.document_adapters.jsonl_adapters import (
     JSONLExtractor,
     DocumentFromJSONL,
     DocumentStackFromJSONLFile,
 )
-from rag.adapters.document_adapters.pdf_adapters import (
-    DocumentFromPDF,
-    DocumentStackFromPDFFolder
-)
-from rag.adapters.document_adapters.markdown_adapters import (
-    MarkDownExtractor,
-    MDDocumentStackFromFolder
+from rag.adapters.stack_from_folder import (
+    DocumentStackFromFolder
 )
 from rag.rag.vectordb import ElasticsearchVectorDB
 
@@ -43,11 +35,10 @@ __all__ = [
     "Document",
     "DocumentChunk",
     "DocumentError",
-    "DocumentFromPDF",
     "DocumentFromJSONL",
     "DocumentRepository",
     "DocumentStack",
-    "DocumentStackFromPDFFolder",
+    "DocumentStackFromFolder",
     "DocumentStackFromJSONLFile",
     "ElasticsearchVectorDB",
     "Embedding",
@@ -56,14 +47,11 @@ __all__ = [
     "InferenceError",
     "InferenceModel",
     "LlamaIndexChunker",
-    "MarkDownExtractor",
-    "MDDocumentStackFromFolder",
     "OlragError",
     "OpenAIEmbeddingModel",
     "PyPDFExtractor",
     "RAG",
     "RetrievalError",
-    "TextExtractor",
     "VectorDB",
     "VectorDBError",
 ]

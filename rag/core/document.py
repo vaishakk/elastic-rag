@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple, Generator, Any
 
 
 @dataclass
@@ -22,23 +22,41 @@ class Document:
     text: str = field(repr=False)
     summary: str = None
 
+class DocumentExtractor(ABC):
+
+    @abstractmethod
+    def extract_text(self, url: Path) -> Tuple[str, str, dict] | Generator[Tuple[str, str, dict], Any, None]:
+        pass
+
+class DocumentRepo(ABC):
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_doc_by_id(self, id: str) -> Document:
+        pass
+
+    @abstractmethod
+    def add_doc(self, document: Document) -> bool:
+        pass
+
 @dataclass
 class DocumentStack:
     """
-    Holds a collection of Document objects and concatenates their text.
+    Holds a collection of Document objects.
 
     Attributes:
-        documents (List[Document]): List of Document instances.
-        text (str): Combined text of all documents separated by double newlines.
+        documents (List[str]): List of Document ids.
+        repo: Document repository that holds all the documents in the stack.
     """
-    documents: List[Document]
-    text: str = ''
+    repo: DocumentRepo
+    documents: List[str]  # List of doc ids
 
-    def __post_init__(self):
-        """
-        Initialize the combined text for the stack by joining all document texts.
-        """
-        self.text = "\n\n".join([doc.text for doc in self.documents])
+    def __init__(self, repo: DocumentRepo, doc_extractor: DocumentExtractor):
+        self.repo = repo
+        self.doc_extractor = doc_extractor
+        self.documents = []
 
     def add(self, document: Document):
         """
@@ -47,8 +65,11 @@ class DocumentStack:
         Args:
             document (Document): The document to add.
         """
-        self.documents.append(document)
-        self.text = "\n\n".join([self.text, document.text])
+        self.repo.add_doc(document)
+        self.documents.append(document.id)
+
+    def get_doc_by_id(self, id: str) -> Document:
+        return self.repo.get_doc_by_id(id)
 
     def __len__(self):
         """

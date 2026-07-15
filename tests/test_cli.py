@@ -5,6 +5,7 @@ from pathlib import Path
 
 from cli import format_result, print_results, prompt_main_menu, prompt_search_loop, reindex_docs_folder
 from rag.core.document import Document, DocumentChunk, DocumentStack
+from tests.test_document_adapters import InMemoryRepo
 
 
 def test_format_result_includes_rank_ids_and_score():
@@ -90,12 +91,14 @@ def test_reindex_docs_folder_rebuilds_index():
     def _stack_factory(folder_url: str, extractor):
         assert Path(folder_url) == Path("./docs")
         assert extractor.__class__.__name__ == "PyPDFExtractor"
-        return DocumentStack(
-            documents=[
-                Document(id="1", path=Path("docs/a.pdf"), title="A", text="one"),
-                Document(id="2", path=Path("docs/b.pdf"), title="B", text="two"),
-            ]
-        )
+        documents = [
+            Document(id="1", path=Path("docs/a.pdf"), title="A", text="one"),
+            Document(id="2", path=Path("docs/b.pdf"), title="B", text="two"),
+        ]
+        stack = DocumentStack(repo=InMemoryRepo(), doc_extractor=extractor)
+        for doc in documents:
+            stack.add(doc)
+        return stack
 
     db = _FakeDB()
     buffer = StringIO()

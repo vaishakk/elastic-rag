@@ -1,17 +1,19 @@
 import os
 from functools import lru_cache
+from contextlib import asynccontextmanager
+from typing import Annotated, Callable
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
-from rag import ElasticsearchVectorDB, OpenAIEmbeddingModel, LlamaIndexChunker, RAG
-from rag.rag.document_extractors.markdown_extractors import DocumentStackFromMarkdownFolder, PlainTextExtractor
-
-app = FastAPI()
+from rag import ElasticsearchVectorDB, DictDocumentRepository
+from rag.core.rag import RAG
+from rag.rag.chunkers import LlamaIndexChunker
+from rag.rag.document_extractors.markdown_readers import DocumentStackFromMarkdownFolder
+from rag.rag.embedding import OpenAIEmbeddingModel
 
 
 def build_rag_system(index_name: str | None = None) -> RAG:
-    # stack = DocumentStackFromPDFFolder('./docs', PyPDFExtractor())
-    stack = DocumentStackFromMarkdownFolder('./docs/Markdowns', PlainTextExtractor())
+    stack = DocumentStackFromMarkdownFolder("./docs/Markdowns", DictDocumentRepository())
     embed_model = OpenAIEmbeddingModel()
     chunker = LlamaIndexChunker()
     resolved_index_name = index_name or os.environ.get("ES_INDEX_NAME")
@@ -22,6 +24,7 @@ def build_rag_system(index_name: str | None = None) -> RAG:
             model=embed_model,
             chunker=chunker,
             index_name=resolved_index_name,
+            skip_indexing=True,
         )
     )
 
@@ -29,14 +32,38 @@ def build_rag_system(index_name: str | None = None) -> RAG:
 @lru_cache(maxsize=1)
 def get_rag_system() -> RAG:
     return build_rag_system()
-rag_system = get_rag_system()
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
 
 
-@app.get("/search/{query}")
-def answer_query(query: str | None = None):
-    ans = rag_system.retrieve(query)
-    return {"answer": ans, "q": query}
+def create_app(rag_provider: Callable[[], RAG] = get_rag_system) -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        app.state.rag_system = rag_provider()
+        yield
+
+    app = FastAPI(lifespan=lifespan)
+
+    def get_rag_system_dependency() -> RAG:
+        rag_system = getattr(app.state, "rag_system", None)
+        if rag_system is None:
+            raise RuntimeError("RAG system was not loaded during application startup")
+        return rag_system
+
+    @app.get("/")
+    def read_root():
+        return {"Hello": "World"}
+
+    @app.get("/search/{query}")
+    def answer_query(query: str, rag_system: Annotated[RAG, Depends(get_rag_system_dependency)]):
+        ans = rag_system.retrieve(query)
+        return {"answer": ans, "q": query}
+
+    return app
+
+
+app = create_app()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)
