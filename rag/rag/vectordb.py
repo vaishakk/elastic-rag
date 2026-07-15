@@ -137,7 +137,7 @@ class ElasticsearchVectorDB(VectorDB):
             return set()
 
         try:
-            response = self.client.mget(index=self.index_name, ids=unique_ids, source=False)
+            response = self.client.mget(index=self.index_name, ids=unique_ids)
         except Exception as exc:  # pragma: no cover - defensive wrapper
             raise VectorDBError("Failed to check existing chunk ids in Elasticsearch") from exc
 

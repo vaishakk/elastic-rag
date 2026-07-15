@@ -166,7 +166,7 @@ def test_vector_db_uses_model_embed_batch():
             return _Client()
 
     model = _Model()
-    db = _DB(model=model, chunker=_NoopChunker(), client=_Client())
+    db = _DB(model=model, chunker=_NoopChunker(), client=_Client(), index_name="rag-documents")
 
     result = db._embed_chunks(
         [
@@ -220,7 +220,7 @@ def test_vector_db_skips_chunks_that_already_exist(monkeypatch):
 
     model = _Model()
     client = _Client()
-    db = _DB(model=model, chunker=_NoopChunker(), client=client)
+    db = _DB(model=model, chunker=_NoopChunker(), client=client, index_name="rag-documents")
 
     db._index_chunks(
         [
@@ -272,7 +272,7 @@ def test_vector_db_retrieve_selects_bm25_search():
             return _Client()
 
     client = _Client()
-    db = _DB(model=_Model(), chunker=_NoopChunker(), client=client)
+    db = _DB(model=_Model(), chunker=_NoopChunker(), client=client, index_name="rag-documents")
 
     results = db.retrieve("diet and cancer", search_method="bm25", top_k=5)
 
@@ -328,7 +328,7 @@ def test_vector_db_retrieve_defaults_to_vector_search():
 
     client = _Client()
     model = _Model()
-    db = _DB(model=model, chunker=_NoopChunker(), client=client)
+    db = _DB(model=model, chunker=_NoopChunker(), client=client, index_name="rag-documents")
 
     results = db.retrieve("diet and cancer", top_k=3, num_candidates=7)
 
@@ -426,7 +426,7 @@ def test_vector_db_retrieve_hybrid_search_fuses_vector_and_bm25_results():
 
     client = _Client()
     model = _Model()
-    db = _DB(model=model, chunker=_NoopChunker(), client=client)
+    db = _DB(model=model, chunker=_NoopChunker(), client=client, index_name="rag-documents")
 
     results = db.retrieve("diet and cancer", top_k=2, num_candidates=7, search_method="hybrid")
 
@@ -458,7 +458,7 @@ def test_vector_db_retrieve_rejects_unknown_search_method():
         def _build_client(self):
             return _Client()
 
-    db = _DB(model=_Model(), chunker=_NoopChunker(), client=_Client())
+    db = _DB(model=_Model(), chunker=_NoopChunker(), client=_Client(), index_name="rag-documents")
 
     with pytest.raises(VectorDBError, match="Unsupported search method"):
         db.retrieve("diet and cancer", search_method="unknown")
