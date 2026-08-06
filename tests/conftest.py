@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pandas.core.reshape import tile
 
-from rag import DocumentStackFromPDFFolder, TextExtractor, DocumentChunk, InferenceModel, Embedding, VectorDB, \
+from rag import DocumentStackFromFolder, DocumentChunk, InferenceModel, Embedding, VectorDB, \
     EmbeddingModel, Chunker, RAG, Document
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,13 +17,7 @@ if str(ROOT) not in sys.path:
 class PDFTextExtractor:
     pass
 
-
-class MockPDFExtractor(TextExtractor):
-
-    def extract_text(self, url, **kwargs):
-        return 'sample text', 'sample title'
-
-class MockStackFromFolder(DocumentStackFromPDFFolder):
+class MockStackFromFolder(DocumentStackFromFolder):
 
     def __init__(self, folder_url):
         self.documents = [
