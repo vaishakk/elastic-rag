@@ -20,7 +20,6 @@ class JSONLExtractor(DocumentExtractor):
         if Path(url).suffix.lower() != ".jsonl":
             raise DocumentError("Only JSONL files are supported.")
 
-        docs: List[Document] = []
         try:
             with Path(url).open("r", encoding="utf-8") as f:
                 for line_number, raw_line in enumerate(f, start=1):
@@ -36,9 +35,6 @@ class JSONLExtractor(DocumentExtractor):
 
         except FileNotFoundError as exc:
             raise DocumentError("File not found.") from exc
-
-        if not docs:
-            raise DocumentError("JSONL file is empty.")
 
 
     def extract_one(self, record: dict, id_field=None) -> Tuple[str, str, dict]:
@@ -57,7 +53,7 @@ class JSONLExtractor(DocumentExtractor):
         if not isinstance(title, str):
             raise DocumentError("JSONL field 'title' must be a string.")
 
-        return text, title, metadata
+        return title, text, metadata
 
 
 class DocumentFromJSONL(Document):
@@ -73,7 +69,7 @@ class DocumentFromJSONL(Document):
         extractor: JSONLExtractor,
         record: dict,
     ):
-        text, title, metadata = extractor.extract_text(record, file_url, id_field="_id")
+        title, text, metadata = extractor.extract_text(record, file_url, id_field="_id")
         super().__init__(id=metadata.get('_id', id), path=file_url, title=title, text=text, summary=summary)
         self.extractor = extractor
 

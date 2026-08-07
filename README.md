@@ -204,14 +204,11 @@ Evaluation-oriented RAG development is especially important because a language m
 
 The current benchmark on `rag/evals/test.tsv` and `rag/evals/queries.jsonl` is:
 
-| Search Method | Top k | Precision | Recall | F-Score |
-|---------------|---:|---:|---:|---:|
-| vector        | 10 | 0.29 | 0.18 | 0.22 |
-| vector        | 4 | 0.38 | 0.12 | 0.18 |
-| bm25          | 10 | 0.31 | 0.17 | 0.22 |
-| bm25          | 4 | 0.37 | 0.12 | 0.18 |
-| hybrid        | 10 | 0.27 | 0.19 | 0.22 |
-| hybrid        | 4 | 0.37 | 0.13 | 0.19 |
+| Search Method |      Precision@10 |                  Precision@4 |         Recall@10 |          Recall@4 |                F-Score@10 |             F-Score@4 |
+|---------------|------------------:|-----------------------------:|------------------:|------------------:|--------------------------:|----------------------:|
+| vector        |              0.29 |            <mark>0.38</mark> |              0.18 |              0.12 |         <mark>0.22</mark> |                  0.18 |
+| bm25          | <mark>0.31</mark> |                         0.37 |              0.17 |              0.12 |         <mark>0.22</mark> |                  0.18 |
+| hybrid        |              0.27 |                         0.37 | <mark>0.19</mark> | <mark>0.13</mark> |         <mark>0.22</mark> |     <mark>0.19</mark> |
 
 ## Roadmap
 
