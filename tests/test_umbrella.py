@@ -1,4 +1,5 @@
 from rag.core.evals.umbrella import *
+from umbrella_eval import OpenAIJudge
 
 class MedianJudge(LLMJudge):
 
@@ -32,3 +33,18 @@ def test_evaluate(rag):
     assert '2' in umbrella.scores
     assert umbrella.scores['1'].avg_score == 3
     assert umbrella.scores['2'].avg_score == 3
+
+def test_openai_judge():
+    judge = OpenAIJudge()
+    scores = judge.judge_query(
+        query='2 + 2 = ?',
+        context=[
+            DocumentChunk(id='1', doc_id='doc1', text='2 + 2 = 4'),
+            DocumentChunk(id='2', doc_id='doc1', text='2 + 3 = 5'),
+            DocumentChunk(id='3', doc_id='doc1', text='Hello!')
+        ]
+    )
+    assert len(scores) == 3
+    assert scores[0] == 3
+    assert scores[1] < 3
+    assert scores[2] == 0

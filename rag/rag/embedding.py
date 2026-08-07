@@ -10,7 +10,7 @@ from openai import OpenAI
 from rag.core.document import DocumentChunk
 from rag.core.embedding import Embedding, EmbeddingModel
 from rag.core.exceptions import EmbeddingError
-
+from rag.rag.LLMs.open_ai import *
 
 class OpenAIEmbeddingModel(EmbeddingModel):
     """Embedding model that uses OpenAI's text-embedding API."""
@@ -136,7 +136,8 @@ class OpenAIEmbeddingModel(EmbeddingModel):
     def _embed_texts(self, chunks: List[DocumentChunk]) -> List[Embedding]:
         texts = [chunk.text for chunk in chunks]
         try:
-            response = self._call_embeddings_api(input_data=texts)
+            # response = self._call_embeddings_api(input_data=texts)
+            response = call_api(self.client, input_data=texts, call_type='embed')
         except EmbeddingError:
             raise
         except Exception as exc:  # pragma: no cover

@@ -28,7 +28,7 @@ class LLMJudge(ABC):
             context: Retrieved document chunks for the query.
 
         Returns:
-            A list of relevance scores aligned with `context`.
+            A list of relevance scores, one score for each chunk.
         """
         pass
 

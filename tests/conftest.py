@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import pytest
-from pandas.core.reshape import tile
 
 from rag import DocumentStackFromFolder, DocumentChunk, InferenceModel, Embedding, VectorDB, \
     EmbeddingModel, Chunker, RAG, Document
