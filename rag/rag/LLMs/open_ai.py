@@ -1,6 +1,8 @@
+import json
 import time
 
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
+from pydantic import BaseModel
 
 from rag import EmbeddingError
 
@@ -22,7 +24,7 @@ def _is_tpm_rate_limit_error(exc: Exception) -> bool:
         )
     )
 
-def chat_completion(client, system_prompt: str, query: str) -> str:
+def chat_completion(client, system_prompt: str, query: str, response_format: BaseModel|None = None) -> str|dict:
     messages = [
         {
             'role': 'system',
@@ -34,12 +36,17 @@ def chat_completion(client, system_prompt: str, query: str) -> str:
         }
     ]
     try:
-        response = call_api(client, messages, call_type='chat')
+        if response_format:
+            response = call_api(client, messages, call_type='parse', response_format=response_format)
+            return json.loads(response.output[0].content[0].text)
+        else:
+            response = call_api(client, messages, call_type='chat')
+            return response.choices[0].message.content
     except Exception as exc:
         raise EmbeddingError()
-    return response.choices[0].message.content
 
-def call_api(client: OpenAI, input_data: list, call_type: str ='chat'):
+
+def call_api(client: OpenAI, input_data: list|str, response_format: BaseModel|None=None, call_type: str ='chat'):
     # client = OpenAI()
     retry_max_attempts = 5
     retry_base_delay_seconds = 0.01
@@ -50,6 +57,14 @@ def call_api(client: OpenAI, input_data: list, call_type: str ='chat'):
                 return client.embeddings.create(
                     model=EMBED_MODEL,
                     input=input_data,
+                )
+            elif call_type.lower() == "parse":
+                if not response_format:
+                    raise OpenAIError(f'Missing argument response_format.')
+                return client.responses.parse(
+                    model=CHAT_MODEL,
+                    input=input_data,
+                    text_format=response_format
                 )
             elif call_type.lower() == "chat":
                 return client.chat.completions.create(

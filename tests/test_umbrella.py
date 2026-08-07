@@ -28,7 +28,9 @@ def test_evaluate(rag):
         queries=[Query(query_id='1', text='query1'), Query(query_id='2', text='query2')],
         relevant_threshold=3
     )
-    umbrella.evaluate()
+
+    for _ in umbrella.evaluate():
+        continue
     assert '1' in umbrella.scores
     assert '2' in umbrella.scores
     assert umbrella.scores['1'].avg_score == 3

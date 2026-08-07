@@ -1,4 +1,11 @@
+import json
+
 from rag.rag.LLMs.open_ai import *
+
+class TestResponse(BaseModel):
+    art1: str
+    art2: int
+    art3: list[int]
 
 def test_openai_embedding():
     texts = [
@@ -30,3 +37,23 @@ def test_openai_chat():
         query='Hello!')
     assert response is not None
     assert response == 'Hi!'
+
+def test_openai_parse():
+    messages = [
+        {
+            'role': 'system',
+            'content': ''
+        },
+        {
+            'role': 'user',
+            'content': 'Give a random integer, a list of 5 integers and a random string',
+        }
+    ]
+    response = call_api(OpenAI(), input_data=messages, response_format=TestResponse, call_type='parse')
+    parsed = json.loads(response.output[0].content[0].text)
+    assert response is not None
+    assert len(parsed) == 3
+    assert all(art in parsed for art in ['art1', 'art2', 'art3'])
+    assert type(parsed['art1']) == str
+    assert type(parsed['art2']) == int
+    assert type(parsed['art3']) == list

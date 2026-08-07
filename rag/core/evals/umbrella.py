@@ -73,6 +73,7 @@ class Umbrella:
     def evaluate(self):
         for query in self.queries:
             self.scores[query.query_id] = self.evaluate_query(query=query)
+            yield
 
     # Adapted from the Open RAG Eval project.
     # Original code: https://github.com/vectara/open-rag-eval/

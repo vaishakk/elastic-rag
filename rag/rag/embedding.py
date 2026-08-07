@@ -203,7 +203,8 @@ class OpenAIEmbeddingModel(EmbeddingModel):
             raise EmbeddingError("Cannot embed empty chunk")
 
         try:
-            response = self._call_embeddings_api(input_data=chunk.text)
+            # response = self._call_embeddings_api(input_data=chunk.text)
+            response = call_api(client=self.client, input_data=chunk.text, call_type='embed')
         except EmbeddingError:
             raise
         except Exception as exc:  # pragma: no cover
